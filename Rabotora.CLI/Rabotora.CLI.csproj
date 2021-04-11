@@ -14,4 +14,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Rabotora.MultiLanguage\Rabotora.MultiLanguage.csproj" />
+  </ItemGroup>
+
 </Project>
