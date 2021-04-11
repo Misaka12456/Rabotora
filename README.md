@@ -1,9 +1,9 @@
 # Rabotora
 下一代视觉小说(VN)开源游戏引擎  
 The Next Generation's Open-Source Visual Novel Game Engine  
+[![Join the chat at https://gitter.im/Rabotora/community](https://badges.gitter.im/Rabotora/community.svg)](https://gitter.im/Rabotora/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![Misaka Castle Member Project](https://img.shields.io/badge/Misaka%20Castle-member%20project-fuchsia)
 ![Rabotora](https://img.shields.io/github/license/Misaka12456/Rabotora)
-![Rabotora Gitter Chat](https://img.shields.io/gitter/room/Misaka12456/Rabotora?color=blue)
 
 
 ## 解决方案结构 / Solution Structure
@@ -11,6 +11,7 @@ The Next Generation's Open-Source Visual Novel Game Engine
 - Rabotora.Compiler: Rabotora 游戏编译器 / Rabotora Game Compiler
 - Rabotora.Creator: Rabotora 游戏开发集成环境 / Rabotora Game Developing IDE
 - Rabotora.Launcher: Rabotora 游戏启动器 / Rabotora Game Launcher (会在游戏程序生成时重编译 / will be re-compiled when building a new game)
+- Rabotora.MultiLanguage: Rabotora 系统语言包支持 / Rabotora System Multi-Language Packages Support
 
 ## 开发环境依赖 / Developing Environment Dependencies
 - Microsoft Visual Studio 2019 (v16.8+) 64位/64 Bit
