@@ -168,6 +168,15 @@ arguments:
   --buildconfig \tUsing designated build configuration file when building game.
   --publishconfig \tUsing designated publish configuration file when publishing game.</value>
   </data>
+  <data name="CLI.MissingArguments" xml:space="preserve">
+    <value>Error: "{0}" needs at least {1} argument(s)</value>
+  </data>
+  <data name="CLI.ProjectManager.CreateFailed" xml:space="preserve">
+    <value>Failed to create new game project: {0}</value>
+  </data>
+  <data name="CLI.ProjectManager.CreateSuccess" xml:space="preserve">
+    <value>Successfully created new game project {0} in {1}</value>
+  </data>
   <data name="CLI.Version" xml:space="preserve">
     <value>Rabotora Runtime v{0}
 Rabotora SDK v{1}</value>

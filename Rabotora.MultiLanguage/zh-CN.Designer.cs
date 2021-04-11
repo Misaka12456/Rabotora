@@ -111,6 +111,33 @@ namespace Rabotora.MultiLanguage {
         }
         
         /// <summary>
+        ///   查找类似 错误: &quot;{0}&quot; 需要至少 {1} 个参数 的本地化字符串。
+        /// </summary>
+        public static string CLI_MissingArguments {
+            get {
+                return ResourceManager.GetString("CLI.MissingArguments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 新游戏项目创建失败: {0} 的本地化字符串。
+        /// </summary>
+        public static string CLI_ProjectManager_CreateFailed {
+            get {
+                return ResourceManager.GetString("CLI.ProjectManager.CreateFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 成功在 {1} 创建项目 {0} 的本地化字符串。
+        /// </summary>
+        public static string CLI_ProjectManager_CreateSuccess {
+            get {
+                return ResourceManager.GetString("CLI.ProjectManager.CreateSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Rabotora 运行时 v{0}
         ///Rabotora SDK v{1} 的本地化字符串。
         /// </summary>

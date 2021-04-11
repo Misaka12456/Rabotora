@@ -168,6 +168,15 @@ arguments:
   --buildconfig \t使用指定的配置文件生成游戏项目。
   --publishconfig \t使用指定的配置文件发布游戏项目。</value>
   </data>
+  <data name="CLI.MissingArguments" xml:space="preserve">
+    <value>错误: "{0}" 需要至少 {1} 个参数</value>
+  </data>
+  <data name="CLI.ProjectManager.CreateFailed" xml:space="preserve">
+    <value>新游戏项目创建失败: {0}</value>
+  </data>
+  <data name="CLI.ProjectManager.CreateSuccess" xml:space="preserve">
+    <value>成功在 {1} 创建项目 {0}</value>
+  </data>
   <data name="CLI.Version" xml:space="preserve">
     <value>Rabotora 运行时 v{0}
 Rabotora SDK v{1}</value>

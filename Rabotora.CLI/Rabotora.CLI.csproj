@@ -15,6 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="SDK\Models\GameProject.cs~RF326b9f13.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Rabotora.MultiLanguage\Rabotora.MultiLanguage.csproj" />
   </ItemGroup>
 

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Rabotora.CLI.SDK;
+using System;
 using System.Globalization;
 using System.Reflection;
 using static Rabotora.CLI.MultiLang;
 
 namespace Rabotora.CLI
 {
-	class Program
+	public class Program
 	{
 		static void Main(string[] args)
 		{
@@ -38,8 +39,13 @@ namespace Rabotora.CLI
 					{
 						Console.WriteLine("Rabotora Runtime is still developing, please wait for patience...");
 					}
+					else
+					{
+						Entry.HandleMain(args);
+					}
 					break;
 				default:
+					Entry.HandleMain(args);
 					break;
 			}
 		}

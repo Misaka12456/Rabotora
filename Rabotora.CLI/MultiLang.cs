@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
@@ -30,7 +31,7 @@ namespace Rabotora.CLI
 			}
 			else if (typeof(T) == typeof(string))
 			{
-				var multiLang = Assembly.LoadFrom("Rabotora.MultiLanguage.dll");
+				var multiLang = Assembly.LoadFrom(Path.Combine(AppContext.BaseDirectory,"Rabotora.MultiLanguage.dll"));
 				var type = multiLang.GetType($"Rabotora.MultiLanguage.{info.Name.Replace("-", "_")}");
 				if (type != null)
 				{
