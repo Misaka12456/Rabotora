@@ -17,12 +17,12 @@ The Next Generation's Open-Source Visual Novel Game Engine
 - .NET SDK (Microsoft.NetCore.App) (v5.0.0+)
 
 ## 工作原理 / Operating Principle
-基于.NET动态编译机制和开源编译引擎("Roslyn")实现:  
+基于.NET动态编译机制和<a href="https://github.com/dotnet/roslyn" title="Roslyn">开源编译引擎("Roslyn")</a>实现:  
 将游戏数据打包为多个pack(运行时实时读取);  
 将游戏主程序按照每个Rabotora游戏项目的设置重编译(同时嵌入运行库(.NET))。
 
-Implemented based on .NET Dynamic Compilation Mechanism and Open-Source Compilation Engine ("Roslyn"):  
-Pack the data needed for the game into multiple files(will be read in real-time at run time).
+Implemented based on .NET Dynamic Compilation Mechanism and <a href="https://github.com/dotnet/roslyn" title="Roslyn">Open-Source Compilation Engine ("Roslyn")</a>:  
+Pack the data needed for the game into multiple files(will be read in real-time at run time).  
 Re-Compile the Game Launcher according to the settings of every Rabotora Game Project(embed .NET runtime at the same time).
 
 ## 开源协议 / Open-Source License
