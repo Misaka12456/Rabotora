@@ -16,6 +16,7 @@ The Next Generation's Open-Source Visual Novel Game Engine
 ## 开发环境依赖 / Developing Environment Dependencies
 - Microsoft Visual Studio 2019 (v16.8+) 64位/64 Bit
 - .NET SDK (Microsoft.NetCore.App) (v5.0.0+)
+- .NET Framework (v4.7.2+)
 
 ## 工作原理 / Operating Principle
 基于.NET动态编译机制和<a href="https://github.com/dotnet/roslyn" title="Roslyn">开源编译引擎("Roslyn")</a>实现:  
