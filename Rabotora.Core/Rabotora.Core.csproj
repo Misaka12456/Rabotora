@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>x64</Platforms>
+    <AssemblyName>Rabotora.Core</AssemblyName>
+    <AssemblyTitle>Rabotora Core Library</AssemblyTitle>
+    <Product>Rabotora Visual Novel Game Engine</Product>
+    <Company>Team Rabotora</Company>
+    <Copyright>Copyright (C) 2020-2021 Team Rabotora and Rabotora contributors. All rights reserved.</Copyright>
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <FileVersion>0.0.1</FileVersion>
+    <Platforms>x64</Platforms>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+</Project>

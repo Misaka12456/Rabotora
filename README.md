@@ -9,6 +9,7 @@ The Next Generation's Open-Source Visual Novel Game Engine
 ## 解决方案结构 / Solution Structure
 - Rabotora.CLI: Rabotora Host (提供CLI核心功能 / Providing CLI Core Functions)
 - Rabotora.Compiler: Rabotora 游戏编译器 / Rabotora Game Compiler
+- Rabotora.Core: Rabotora 核心库 / Rabotora Core Library
 - Rabotora.Creator: Rabotora 游戏开发集成环境 / Rabotora Game Developing IDE
 - Rabotora.Launcher: Rabotora 游戏启动器 / Rabotora Game Launcher (会在游戏程序生成时重编译 / will be re-compiled when building a new game)
 - Rabotora.MultiLanguage: Rabotora 系统语言包支持 / Rabotora System Multi-Language Packages Support

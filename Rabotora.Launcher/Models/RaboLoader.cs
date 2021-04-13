@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using Ionic.Zip;
 using Newtonsoft.Json.Linq;
-using Rabotora.Launcher.Models;
 using static Rabotora.Launcher.Globals;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using Rabotora.Core.Models;
 
 namespace Rabotora.Launcher
 {

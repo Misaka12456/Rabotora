@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Rabotora.Launcher.Models
+namespace Rabotora.Core.Models
 {
 	/// <summary>
 	/// 表示一个 Rabotora 视觉小说(Visual Novel)游戏启动器的异常。
 	/// </summary>
-	class RabotoraException : Exception
+	public class RabotoraException : Exception
 	{
 		/// <summary>
 		/// 初始化 <see cref="RabotoraException"/> 类的新实例。
 		/// </summary>
-		public RabotoraException() : base("An error occurred when starting the game.")
+		public RabotoraException() : base("An error occurred.")
 		{
 		}
 
