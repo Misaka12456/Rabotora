@@ -12,6 +12,7 @@ namespace Rabotora.Core.ScriptAnalyzer
 	public class Script
 	{
 		private byte[] _data;
+		
 		/// <summary>
 		/// 使用包含脚本数据的 <see cref="Stream"/> 类实例 初始化 <see cref="Script"/> 类的新实例。
 		/// </summary>

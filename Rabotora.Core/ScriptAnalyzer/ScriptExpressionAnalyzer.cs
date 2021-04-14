@@ -32,53 +32,58 @@ namespace Rabotora.Core.ScriptAnalyzer
 			expr = expr.ToLower().Trim();
 			if (!string.IsNullOrWhiteSpace(expr))
 			{
-				if (expr.StandaloneMatch("if") && expr.IndexOf("if", StringComparison.InvariantCultureIgnoreCase) == 0)
-				{ //存在"if"且"if"在语句头
-					Type = ScriptExpressionType.BaseCheckAction;
-					var r = Regex.Match(expr, @"^if\s(\S+)\s*(>|=|<|>=|<=|!=|\|\||&&)\s*(\S+):\s*(\S+)$", RegexOptions.IgnoreCase);
-					if (r.Success)
-					{
-						string target = r.Result("$1"); //判断的目标对象
-						string @operator = r.Result("$2"); //运算符
-						string value = r.Result("$3"); //判断的值
-						string subExp = r.Result("$4"); //若满足条件则执行的子语句
-						AnalyzedData = new JObject()
-						{
-							{ "target", target },
-							{ "operator", @operator },
-							{ "value", value },
-							{ "subExp", subExp }
-						};
-					}
-					else
-					{
-						throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
-					}
-				}
-				else if (expr.Contains("=") && expr.IndexOf('=') > 0) //存在"="且"="不在语句头
+				var r_if = Regex.Match(expr, @"^if\s*([a-zA-Z][0-9a-zA-Z]*)\s*(>|==|<|>=|<=|!=|\|\||&&)\s*\s*(([0-9]*)+|(""\S"")+)\s*:\s*(\S+);$", RegexOptions.IgnoreCase);
+				var r_set = Regex.Match(expr, @"^((var\s*)?\s*[a-zA-Z][0-9a-zA-Z]*)\s*=\s*((([0-9]*)+|(""\S"")+))\s*;$", RegexOptions.IgnoreCase);
+				var r_declare = Regex.Match(expr, @"^var\s*([a-zA-Z][0-9a-zA-Z]*)\s*;$", RegexOptions.IgnoreCase);
+				if () // TODO
 				{
-					if (expr.LastIndexOf('=') == expr.IndexOf('=')) //如果语句中只有一个"="
+
+				}
+				///基本语句的解析顺序在其它所有Visual Novel(视觉小说)游戏常用已封装语句之后
+				#region 基本判断语句(if x == "y": zzzzz;(z是一个语句))
+				else if (r_if.Success)
+				{
+					Type = ScriptExpressionType.BaseCheckAction;
+					string target = r_if.Result("$1"); //判断的目标对象
+					string @operator = r_if.Result("$2"); //运算符
+					string value = r_if.Result("$3").Trim('"'); //判断的值(对于字符串值去除首尾引号)
+					string subExp = r_if.Result("$4"); //若满足条件则执行的子语句
+					AnalyzedData = new JObject()
 					{
-						Type = ScriptExpressionType.BaseSetAction;
-						string target = expr.Split(new[] { ' ' }, count: 2, StringSplitOptions.RemoveEmptyEntries)[0];
-						string value = expr.Split(new[] { ' ' }, count: 2, StringSplitOptions.RemoveEmptyEntries)[1];
-						if (!string.IsNullOrWhiteSpace(target) && !string.IsNullOrWhiteSpace(value))
-						{
-							AnalyzedData = new JObject()
-							{
-								{ "target", target },
-								{ "value",value }
-							};
-						}
-						else
-						{
-							throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
-						}
-					}
-					else
+						{ "target", target },
+						{ "operator", @operator },
+						{ "value", value },
+						{ "subExp", subExp }
+					};
+				}
+				#endregion
+				#region 基本赋值语句(x = "y";)
+				else if (r_set.Success)
+				{
+					Type = ScriptExpressionType.BaseSetAction;
+					string target = r_set.Result("$1"); //赋值对象(不存在则创建对象)
+					string value = r_set.Result("$2").Trim('"'); //要赋的值(对于字符串值去除首尾引号)
+					AnalyzedData = new JObject()
 					{
-						throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
-					}
+						{ "target", target },
+						{ "value", value }
+					};
+				}
+				#endregion
+				#region 基本声明语句(var x;)
+				else if (r_declare.Success)
+				{
+					Type = ScriptExpressionType.BaseCheckAction;
+					string target = r_declare.Result("$1"); //声明的对象名
+					AnalyzedData = new JObject()
+					{
+						{ "target", target }
+					};
+				}
+				#endregion
+				else
+				{
+					throw new ScriptLoadException($"Failed to load script: Invalid expression: {expr}");
 				}
 			}
 			else
