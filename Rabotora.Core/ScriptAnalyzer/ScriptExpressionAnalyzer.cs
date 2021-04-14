@@ -4,6 +4,7 @@ using Rabotora.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Rabotora.Core.ScriptAnalyzer
 {
@@ -34,6 +35,25 @@ namespace Rabotora.Core.ScriptAnalyzer
 				if (expr.StandaloneMatch("if") && expr.IndexOf("if", StringComparison.InvariantCultureIgnoreCase) == 0)
 				{ //存在"if"且"if"在语句头
 					Type = ScriptExpressionType.BaseCheckAction;
+					var r = Regex.Match(expr, @"^if\s(\S+)\s*(>|=|<|>=|<=|!=|\|\||&&)\s*(\S+):\s*(\S+)$", RegexOptions.IgnoreCase);
+					if (r.Success)
+					{
+						string target = r.Result("$1"); //判断的目标对象
+						string @operator = r.Result("$2"); //运算符
+						string value = r.Result("$3"); //判断的值
+						string subExp = r.Result("$4"); //若满足条件则执行的子语句
+						AnalyzedData = new JObject()
+						{
+							{ "target", target },
+							{ "operator", @operator },
+							{ "value", value },
+							{ "subExp", subExp }
+						};
+					}
+					else
+					{
+						throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
+					}
 				}
 				else if (expr.Contains("=") && expr.IndexOf('=') > 0) //存在"="且"="不在语句头
 				{
@@ -52,12 +72,12 @@ namespace Rabotora.Core.ScriptAnalyzer
 						}
 						else
 						{
-							throw new ScriptLoadException();
+							throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
 						}
 					}
 					else
 					{
-						throw new ScriptLoadException();
+						throw new ScriptLoadException($"Load script failed: Invalid expression:\n{expr}");
 					}
 				}
 			}

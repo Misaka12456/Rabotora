@@ -16,5 +16,10 @@ namespace Rabotora.Core.Models
 		{
 
 		}
+
+		public ScriptLoadException(string message) : base(message)
+		{
+
+		}
 	}
 }

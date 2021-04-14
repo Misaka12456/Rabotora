@@ -25,7 +25,6 @@ namespace Rabotora.Core.Models
 		{
 
 		}
-
 		public override string ToString()
 		{
 			return base.Message;
