@@ -35,7 +35,7 @@ namespace Rabotora.Core.ScriptAnalyzer
 				var r_if = Regex.Match(expr, @"^if\s*([a-zA-Z][0-9a-zA-Z]*)\s*(>|==|<|>=|<=|!=|\|\||&&)\s*\s*(([0-9]*)+|(""\S"")+)\s*:\s*(\S+);$", RegexOptions.IgnoreCase);
 				var r_set = Regex.Match(expr, @"^((var\s*)?\s*[a-zA-Z][0-9a-zA-Z]*)\s*=\s*((([0-9]*)+|(""\S"")+))\s*;$", RegexOptions.IgnoreCase);
 				var r_declare = Regex.Match(expr, @"^var\s*([a-zA-Z][0-9a-zA-Z]*)\s*;$", RegexOptions.IgnoreCase);
-				if () // TODO
+				if (true) // TODO
 				{
 
 				}

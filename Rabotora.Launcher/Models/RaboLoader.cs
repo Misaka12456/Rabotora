@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
 using Rabotora.Core.Models;
+using Microsoft.VisualBasic;
 
 namespace Rabotora.Launcher
 {
@@ -26,8 +27,8 @@ namespace Rabotora.Launcher
 		{
 			try
 			{
-				string cmdArgs = Environment.CommandLine;
-				if (cmdArgs.Split(' ').Length > 1)
+				string cmdArgs = Interaction.Command();
+				if (!string.IsNullOrWhiteSpace(cmdArgs))
 				{
 					string BaseDirectory = cmdArgs.Split(new[] { ' ' }, count: 2)[1].Replace("\"",string.Empty);
 					if (File.Exists(Path.Combine(BaseDirectory, "system.rpk"))) //rpk: Rabotora Package
@@ -58,7 +59,7 @@ namespace Rabotora.Launcher
 									var runConf = JObject.Parse(Encoding.UTF8.GetString(configData));
 									string title = runConf.Value<string>("title")!;
 									bool isFullScreen = runConf.Value<bool>("isFullScreen")!;
-									var main = new Form()
+									var main = new FormBase()
 									{
 										Text = title,
 										Tag = BaseDirectory
@@ -67,7 +68,7 @@ namespace Rabotora.Launcher
 									if (runConf.TryGetValue("icon",out var jtk_icon))
 									{
 										var iconStream = new MemoryStream(Convert.FromBase64String((string)jtk_icon!));
-										var iconBMap = (Bitmap)Bitmap.FromStream(iconStream);
+										var iconBMap = (Bitmap)Image.FromStream(iconStream);
 										hIcon = iconBMap.GetHicon();
 										var icon = Icon.FromHandle(hIcon.Value);
 										main.Icon = icon;
@@ -77,7 +78,10 @@ namespace Rabotora.Launcher
 									{
 										main.ShowIcon = false;
 									}
-									new Thread(() => { Application.Run(main); }).Start();
+									new Thread(() =>
+									{
+										
+									}).Start();
 									if (hIcon.HasValue) DestroyIcon(hIcon.Value);
 								}
 								else
@@ -108,7 +112,9 @@ namespace Rabotora.Launcher
 				}
 				else
 				{
-					throw new RabotoraException("Cannot find Launcher file base directory from command line.");
+					throw new RabotoraException("Cannot find Launcher file base directory from command line.\n" +
+										"If you executed Launcher before building the game, please build the game first.\n" +
+										"(Single Launcher (without Run.rbtconfig) Starting is not supported)");
 				}
 			}
 			catch (RabotoraException)

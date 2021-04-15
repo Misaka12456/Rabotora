@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rabotora.MultiLanguage", "R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabotora.Launcher", "Rabotora.Launcher\Rabotora.Launcher.csproj", "{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabotora.Core", "Rabotora.Core\Rabotora.Core.csproj", "{9B12A721-12E1-4418-A768-DDEB0D3FB58E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rabotora.Core", "Rabotora.Core\Rabotora.Core.csproj", "{9B12A721-12E1-4418-A768-DDEB0D3FB58E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,8 +54,8 @@ Global
 		{3185F2EA-A071-4478-A41B-570CF5AEB263}.Release|x64.ActiveCfg = Release|x64
 		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|x64.Build.0 = Debug|Any CPU
+		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|x64.ActiveCfg = Debug|x64
+		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Debug|x64.Build.0 = Debug|x64
 		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F51C0B6-8FB7-4E28-9264-69E07ABF9417}.Release|x64.ActiveCfg = Release|Any CPU

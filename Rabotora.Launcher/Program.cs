@@ -25,7 +25,7 @@ namespace Rabotora.Launcher
 			}
 			catch(RabotoraException ex)
 			{
-				MessageBox.Show(ex.ToString(),Assembly.GetExecutingAssembly().GetAssemblyTitle());
+				MessageBox.Show(ex.ToString(),Assembly.GetExecutingAssembly().GetAssemblyTitle(), MessageBoxButtons.OK, MessageBoxIcon.Error);
 			}
 		}
 	}
