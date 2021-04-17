@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace Rabotora.Launcher
 {
 	partial class FormBase
@@ -38,11 +40,18 @@ namespace Rabotora.Launcher
 			this.BackColor = System.Drawing.Color.Black;
 			this.ClientSize = new System.Drawing.Size(1264, 681);
 			this.DoubleBuffered = true;
+			this.KeyPreview = true;
 			this.Name = "FormBase";
-			this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+			this.Text = "Rabotora Game Launcher Main";
+			this.Load += new System.EventHandler(this.FormBase_Load);
+			this.Shown += new System.EventHandler(this.FormBase_Shown);
+			this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FormBase_KeyUp);
+			this.Resize += new System.EventHandler(this.FormBase_Resize);
 			this.ResumeLayout(false);
 
 		}
+
+
 
 		#endregion
 	}

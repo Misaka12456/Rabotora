@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using System.Threading;
 using Rabotora.Core.Models;
 using Microsoft.VisualBasic;
+using Rabotora.Core.ScriptAnalyzer;
 
 namespace Rabotora.Launcher
 {
@@ -78,10 +79,19 @@ namespace Rabotora.Launcher
 									{
 										main.ShowIcon = false;
 									}
+									string splashFileName = runConf.Value<string>("splashScript");
+									var splashStream = new MemoryStream();
+									rpk_system[splashFileName].Extract(splashStream);
+									byte[] splashScriptData = splashStream.ToArray();
+									splashStream.Dispose();
+									var splashScript = new Script(splashScriptData);
+									// TODO:初次打开游戏的设置提示
+									if (!GameEnv.IsSavePathInitialized) GameEnv.InitializeSavePath();
 									new Thread(() =>
 									{
-										
-									}).Start();
+										Application.Run(main);
+									});
+									Thread.Sleep(1000);
 									if (hIcon.HasValue) DestroyIcon(hIcon.Value);
 								}
 								else
