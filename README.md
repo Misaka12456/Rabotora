@@ -5,6 +5,8 @@ The Next Generation's Open-Source Visual Novel Game Engine
 ![Misaka Castle Member Project](https://img.shields.io/badge/Misaka%20Castle-member%20project-fuchsia)
 ![Rabotora](https://img.shields.io/github/license/Misaka12456/Rabotora)
 
+## 开发文档 / Development Documents
+[点击这里跳转到Rabotora引擎的游戏开发文档 / Click here to jump to Rabotora Game Developing Documents](https://github.com/Misaka12456/Rabotora/blob/master/Docs)
 
 ## 解决方案结构 / Solution Structure
 - Rabotora.CLI: Rabotora Host (提供CLI核心功能 / Providing CLI Core Functions)

@@ -68,7 +68,7 @@ namespace Rabotora.Launcher
 			EntryScript = script;
 		}
 
-		public void StartMain()
+		protected void StartMain()
 		{
 			var g = CreateGraphics();
 			g.Clear(Color.Black);
@@ -88,7 +88,7 @@ namespace Rabotora.Launcher
 			}
 		}
 
-		public void CreateDeviceResource(Control target)
+		protected void CreateDeviceResource(Control target)
 		{
 			Factory = new Factory();
 			IFactory = new ImagingFactory();
@@ -103,14 +103,14 @@ namespace Rabotora.Launcher
 			RenderTarget = new WindowRenderTarget(Factory, r, h);
 		}
 
-		public void CreateXAudio2Resource()
+		protected void CreateXAudio2Resource()
 		{
 			xaudio = new XAudio2();
 			xaudio.StartEngine();
 			MVoice = new MasteringVoice(xaudio);
 		}
 
-		public void StartSplash(string splashPicPath)
+		protected void StartSplash(string splashPicPath)
 		{
 			if (RenderTarget != null)
 			{
@@ -180,7 +180,7 @@ namespace Rabotora.Launcher
 			sourceVoice.Start();
 		}
 
-		public void ReDrawSplash(bool isStartAgain = false, int width = -1, int height = -1)
+		protected void ReDrawSplash(bool isStartAgain = false, int width = -1, int height = -1)
 		{
 			try
 			{

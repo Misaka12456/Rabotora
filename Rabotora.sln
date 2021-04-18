@@ -21,6 +21,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabotora.Launcher", "Raboto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rabotora.Core", "Rabotora.Core\Rabotora.Core.csproj", "{9B12A721-12E1-4418-A768-DDEB0D3FB58E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{560A6408-C139-4541-8BA4-C1A54286D940}"
+	ProjectSection(SolutionItems) = preProject
+		Docs\README.md = Docs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Game", "Game", "{19364B5E-8784-4855-8DC0-396AAA731FD6}"
+	ProjectSection(SolutionItems) = preProject
+		Docs\Game\Script.md = Docs\Game\Script.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +78,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{560A6408-C139-4541-8BA4-C1A54286D940} = {52277BBE-C649-4051-BABE-F140B095EB3E}
+		{19364B5E-8784-4855-8DC0-396AAA731FD6} = {560A6408-C139-4541-8BA4-C1A54286D940}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {899ECA82-C1C2-4C4A-A056-4928E895E98B}
