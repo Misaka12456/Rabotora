@@ -155,7 +155,7 @@ R.PlayImage(dyImgId[, count[, prop, left, top, width, height]]);
 
 # 停止播放动态图片 / Stop playing a dynamic image
 # dyImgPlayObj=要停止的动态图片的播放对象 / The playing object of the stopping dynamic image resource
-R.StopSound(dyImgPlayObj);
+R.StopImage(dyImgPlayObj);
 
 # 播放视频 / Play a video
 # 提示:本方法会返回一个对象, 停止播放时需传入该对象 / Tip: The method will return a object that will needs when stopping playing
@@ -184,7 +184,7 @@ R.Wait(time[, prop]);
 R.Parallel(statements);
 ```
 
-##### ResMgr - Rabotora资源管理器对象 / Rabotora Resource Manager Object
+#### ResMgr - Rabotora资源管理器对象 / Rabotora Resource Manager Object
 提供的方法类型:资源加载相关的功能  
 Type of provided methods: Functions of resource loading  
 提供的部分常用方法:  /  Part of common-used provided methods:  
