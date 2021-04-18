@@ -14,17 +14,17 @@ namespace Rabotora.Core.IO
 	public class Environment
 	{
 		/// <summary>
-		/// 判断当前Rabotora游戏环境对应的游戏厂商名。
+		/// 获取当前Rabotora游戏环境对应的游戏厂商名。
 		/// </summary>
 		public string Company { get; }
 
 		/// <summary>
-		/// 判断当前Rabotora游戏环境对应的游戏名。
+		/// 获取当前Rabotora游戏环境对应的游戏名。
 		/// </summary>
 		public string GameName { get; }
 
 		/// <summary>
-		/// 判断当前Rabotora游戏环境的存档路径。
+		/// 获取当前Rabotora游戏环境的存档路径。
 		/// <para>若调用本属性时路径未初始化则会自动初始化。</para>
 		/// </summary>
 		public DirectoryInfo SavePath
@@ -32,7 +32,7 @@ namespace Rabotora.Core.IO
 			get
 			{
 				if (!IsSavePathInitialized) InitializeSavePath();
-				return Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save");
+				return new DirectoryInfo(Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save"));
 			}
 		}
 
@@ -65,7 +65,7 @@ namespace Rabotora.Core.IO
 				!File.Exists(Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save", "config.dat")))
 			{
 				Directory.CreateDirectory(Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save"));
-				SQLiteConnection.CreateFile(Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save", "config.dat")));
+				SQLiteConnection.CreateFile(Path.Combine(Env.GetFolderPath(Env.SpecialFolder.MyDocuments), Company, GameName, "save", "config.dat"));
 				return true;
 			}
 			else
