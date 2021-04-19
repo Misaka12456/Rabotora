@@ -2,8 +2,8 @@
 下一代视觉小说(VN)开源游戏引擎  
 The Next Generation's Open-Source Visual Novel Game Engine  
 [![Join the chat at https://gitter.im/Rabotora/community](https://badges.gitter.im/Rabotora/community.svg)](https://gitter.im/Rabotora/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-![Misaka Castle Member Project](https://img.shields.io/badge/Misaka%20Castle-member%20project-fuchsia)
-![Rabotora](https://img.shields.io/github/license/Misaka12456/Rabotora)
+[![Misaka Castle Member Project](https://img.shields.io/badge/Misaka%20Castle-member%20project-fuchsia)](https://misakacastle.moe)
+[![Rabotora](https://img.shields.io/github/license/Misaka12456/Rabotora)](https://github.com/Misaka12456/Rabotora/blob/master/LICENSE)
 
 ## 开发文档 / Development Documents
 [点击这里跳转到Rabotora引擎的游戏开发文档 / Click here to jump to Rabotora Game Developing Documents](https://github.com/Misaka12456/Rabotora/blob/master/Docs)

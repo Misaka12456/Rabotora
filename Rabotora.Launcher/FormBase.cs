@@ -81,7 +81,7 @@ namespace Rabotora.Launcher
 				SetWindowPos(Handle, new IntPtr(-1), 0, 0, Screen.PrimaryScreen.Bounds.Size.Width, Screen.PrimaryScreen.Bounds.Size.Height, 0);
 				isAutoResizing = false;
 				CreateDeviceResource(this);
-				RenderTarget.BeginDraw();
+				RenderTarget!.BeginDraw();
 				RenderTarget.Clear(new RawColor4(0f, 0f, 0f, 0f));
 				RenderTarget.EndDraw();
 				Thread.Sleep(1500);
@@ -132,7 +132,7 @@ namespace Rabotora.Launcher
 
 		public void ChangePicture(string newPicPath,Action? funcWhenStartShowingNewPic = null, Action? funcWhenShowedNewPic = null)
 		{
-			lock (RenderTarget)
+			lock (RenderTarget!)
 			{
 				var res_black = LoadBitmap(RenderTarget, @"C:\Users\Misaka-12456\Pictures\Rabotora\res_black.png", 0);
 				for (float i = 0f; i < 1.0f; i = i + 0.01f)
