@@ -1,5 +1,5 @@
-<b>Update: DO NOT DOWNLOAD RABOTORA PROJECT SOURCE CODE FROM THIRD-PARTY SITE INSTEAD OF GITHUB! 
-更新：不要在除Github外的任何第三方网站下载Proejct Rabotora的源代码！</b> 
+<b>Update: DO NOT DOWNLOAD RABOTORA PROJECT SOURCE CODE FROM THIRD-PARTY SITE INSTEAD OF GITHUB! <br/>
+更新：不要在除Github外的任何第三方网站下载Proejct Rabotora的源代码！</b> <br/>
 [点击这里查看公告 / Click here to jump to Announcement](https://github.com/Misaka12456/Rabotora/blob/master/Docs/cprt-anno.md) 
 -----------
 # Rabotora
