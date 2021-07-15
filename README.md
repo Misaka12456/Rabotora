@@ -1,3 +1,7 @@
+<b>Update: DO NOT DOWNLOAD RABOTORA PROJECT SOURCE CODE FROM THIRD-PARTY SITE INSTEAD OF GITHUB! <br/>
+更新：不要在除Github外的任何第三方网站下载Project Rabotora的源代码！</b> <br/>
+[点击这里查看公告 / Click here to jump to Announcement](https://github.com/Misaka12456/Rabotora/blob/master/Docs/cprt-anno.md) 
+-----------
 # Rabotora
 下一代视觉小说(VN)开源游戏引擎  
 The Next Generation's Open-Source Visual Novel Game Engine  
