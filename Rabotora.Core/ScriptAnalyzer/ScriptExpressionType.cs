@@ -7,7 +7,7 @@ namespace Rabotora.Core.ScriptAnalyzer
 	/// <summary>
 	/// 表示 Rabotora 游戏脚本语句的类型。
 	/// </summary>
-	public enum ScriptExpressionType : uint
+	public enum ScriptExpressionType : int
 	{
 		/// <summary>
 		/// 基本声明语句
@@ -73,10 +73,10 @@ namespace Rabotora.Core.ScriptAnalyzer
 		/// 游戏进度动作语句(保存/读取进度)
 		/// </summary>
 		ProgressAction = 302,
-		
+
 		/// <summary>
 		/// 其它类型语句
 		/// </summary>
-		Others = 1001
+		Others = -1
 	}
 }

@@ -43,7 +43,6 @@ namespace Rabotora.Launcher
 			this.KeyPreview = true;
 			this.Name = "FormBase";
 			this.Text = "Rabotora Game Launcher Main";
-			this.Load += new System.EventHandler(this.FormBase_Load);
 			this.Shown += new System.EventHandler(this.FormBase_Shown);
 			this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FormBase_KeyUp);
 			this.Resize += new System.EventHandler(this.FormBase_Resize);

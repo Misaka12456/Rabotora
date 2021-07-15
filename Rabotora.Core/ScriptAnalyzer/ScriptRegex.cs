@@ -72,7 +72,18 @@ namespace Rabotora.Core.ScriptAnalyzer
 		{
 			get => Regex.Match(_expr, @"^R\s*.\s*PlaySound\s*\(\s*'(?<audioId>[\s\S]+)'\s*(,\s*(?<count>\d+)\s*)?\)\s*;$");
 		}
+
+		/// <summary>
+		/// [核心运行库(R)]停止播放音频
+		/// <para><code>R.StopSound('{$audioPlayObj}');</code><br />
+		/// $audioPlayObj=音频对象id</para>
+		/// </summary>
+		public Match R_StopSound
+		{
+			get => Regex.Match(_expr, @"^R\s*.\s*StopSound\s*\(\s*'(?<audioPlayObj>[\s\S]+)'\)\s*;$");
+		}
 		#endregion
+
 
 		#region 基本语句 / Base Statements
 		/// <summary>

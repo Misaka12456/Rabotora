@@ -23,7 +23,7 @@ namespace Rabotora.Core.ScriptAnalyzer
 		/// </summary>
 		public JObject? AnalyzedData { get; }
 
-		internal ScriptRegex Regex { get; }
+		internal ScriptRegex? Regex { get; }
 		/// <summary>
 		/// 使用指定的语句信息初始化 <see cref="ScriptExpressionAnalyzer"/> 类的新实例。
 		/// </summary>
@@ -35,10 +35,179 @@ namespace Rabotora.Core.ScriptAnalyzer
 			if (!string.IsNullOrWhiteSpace(expr))
 			{
 				Regex = new ScriptRegex(expr);
-				if (true) // TODO
+				if (false) //占位用 
 				{
 
 				}
+				#region R - Rabotora核心运行库对象
+				#region 设置游戏窗口大小(R.SetWindowSize)
+				else if (Regex.R_SetWindowSize.Success)
+				{
+					Type = ScriptExpressionType.UIAction;
+					var r = Regex.R_SetWindowSize;
+					string subType = "R.SetWindowSize";
+					if (uint.TryParse(r.Result("$width"),out uint width) && width > 300)
+					{
+						if (uint.TryParse(r.Result("$height"),out uint height) && height > 200)
+						{
+							AnalyzedData = new JObject()
+							{
+								{ "subType", subType },
+								{ "value", new JObject()
+									{
+										{ "width", width },
+										{ "height", height }
+									}
+								}
+							};
+						}
+						else
+						{
+							throw new ScriptLoadException($"Failed to load script: Invalid Height Value: {r.Result("$height")}");
+						}
+					}
+					else
+					{
+						throw new ScriptLoadException($"Failed to load script: Invalid Width Value: {r.Result("$width")}");
+					}
+				}
+				#endregion
+				#region 绘制字符串(R.DrawString)
+				else if (Regex.R_DrawString.Success)
+				{
+					Type = ScriptExpressionType.SentenceSpeak;
+					var r = Regex.R_DrawString;
+					string subType = "R.DrawString";
+					if (uint.TryParse(r.Result("$left"), out uint left))
+					{
+						if (uint.TryParse(r.Result("$top"), out uint top))
+						{
+							if (uint.TryParse(r.Result("$font"),out uint font))
+							{
+								uint fontId;
+								try
+								{
+									fontId = uint.Parse(r.Result("$fontId"));
+								}
+								catch
+								{
+									fontId = 0;
+								}
+								AnalyzedData = new JObject()
+								{
+									{ "subType", subType },
+									{ "value", new JObject()
+										{
+											{ "data", r.Result("$value") },
+											{ "left", left },
+											{ "top", top },
+											{ "font", font },
+											{ "fontId", fontId }
+										}
+									}
+								};
+							}
+							else
+							{
+								throw new ScriptLoadException($"Failed to load script: Invalid Font Family Number: {r.Result("$font")}");
+							}
+						}
+						else
+						{
+							throw new ScriptLoadException($"Failed to load script: Invalid String Top Location Value: {r.Result("$top")}");
+						}
+					}
+					else
+					{
+						throw new ScriptLoadException($"Failed to load script: Invalid String Left Location Value: {r.Result("$left")}");
+					}
+				}
+				#endregion
+				#region 绘制静态图片(R.DrawImage)
+				else if (Regex.R_DrawImage.Success)
+				{
+					Type = ScriptExpressionType.CGAction;
+					var r = Regex.R_DrawImage;
+					string subType = "R.DrawImage";
+					string? prop = null;
+					uint left, top, width, height;
+					if (!string.IsNullOrEmpty(r.Result("$prop")))
+					{
+						prop = r.Result("$prop");
+					}
+					if (!uint.TryParse(r.Result("$left"), out left))
+					{
+						left = 0;
+					}
+					if (!uint.TryParse(r.Result("$top"), out top))
+					{
+						top = 0;
+					}
+					if (!uint.TryParse(r.Result("$width"), out width))
+					{
+						width = 100;
+					}
+					if (!uint.TryParse(r.Result("$height"), out height))
+					{
+						height = 100;
+					}
+					AnalyzedData = new JObject()
+					{
+						{ "subType", subType },
+						{ "value",new JObject()
+							{
+								{ "imgId", r.Result("$imgId") },
+								{ "prop", prop },
+								{ "left", left },
+								{ "top", top },
+								{ "width", width },
+								{ "height", height }
+							}
+						}
+					};
+					
+				}
+				#endregion
+				#region 播放音频(R.PlaySound)
+				else if (Regex.R_PlaySound.Success)
+				{
+					Type = ScriptExpressionType.SentenceSpeak;
+					var r = Regex.R_PlaySound;
+					string subType = "R.PlaySound";
+					if (!int.TryParse(r.Result("$count"),out int count))
+					{
+						count = 0;
+					}
+					AnalyzedData = new JObject()
+					{
+						{ "subType", subType },
+						{ "value",new JObject()
+							{
+								{ "audioId", r.Result("$audioId") },
+								{ "count", count }
+							}
+						}
+					};
+				}
+				#endregion
+				#region 停止播放音频(R.StopSound)
+				else if (Regex.R_PlaySound.Success)
+				{
+					Type = ScriptExpressionType.SentenceSpeak;
+					var r = Regex.R_StopSound;
+					string subType = "R.StopSound";
+					AnalyzedData = new JObject()
+					{
+						{ "subType", subType },
+						{ "value",new JObject()
+							{
+								{ "audioPlayObj", r.Result("$audioPlayObj") }
+							}
+						}
+					};
+				}
+				#endregion
+				#endregion
 				///基本语句的解析顺序在其它所有Visual Novel(视觉小说)游戏常用已封装语句之后
 				#region 基本判断语句(if x == "y": zzzzz;(z是一个语句))
 				else if (Regex.Base_If.Success)
