@@ -19,6 +19,7 @@ The Next Generation's Open-Source Visual Novel Game Engine
 - Rabotora.Creator: Rabotora 游戏开发集成环境 / Rabotora Game Developing IDE
 - Rabotora.Launcher: Rabotora 游戏启动器 / Rabotora Game Launcher (会在游戏程序生成时重编译 / will be re-compiled when building a new game)
 - Rabotora.MultiLanguage: Rabotora 系统语言包支持 / Rabotora System Multi-Language Packages Support
+- Rabotora.Lite: Rabotora 轻量版 / Rabotora Lite (可嵌入至其它引擎开发的游戏中 / Can be embedded in the game which is built by another game engine)
 
 ## 开发环境依赖 / Developing Environment Dependencies
 - Microsoft Visual Studio 2019 (v16.8+) 64位/64 Bit
@@ -37,3 +38,7 @@ Re-Compile the Game Launcher according to the settings of every Rabotora Game Pr
 ## 开源协议 / Open-Source License
 根据<a href="https://github.com/Misaka12456/Rabotora/blob/master/LICENSE" title="MIT开源许可协议">MIT开源许可协议</a>授权  
 Licensed under <a href="https://github.com/Misaka12456/Rabotora/blob/master/LICENSE" title="The MIT License">The MIT License</a>.
+
+-----
+最后更新日期: 2021.10.25
+Last Update: October 25, 2021
