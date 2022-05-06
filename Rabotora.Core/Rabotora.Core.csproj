@@ -8,12 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Antlr4 Remove="RabotoraScriptFormat\RabotoraScriptFormat.g4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="RabotoraScriptFormat\RabotoraScriptFormat.tokens" />
-    <None Remove="RabotoraScriptFormat\RabotoraScriptFormatLexer.tokens" />
+    <None Remove="Rsf\RabotoraScriptFormat.tokens" />
+    <None Remove="Rsf\RabotoraScriptFormatLexer.tokens" />
   </ItemGroup>
 
   <ItemGroup>

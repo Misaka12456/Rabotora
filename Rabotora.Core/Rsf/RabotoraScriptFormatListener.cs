@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\RabotoraScriptFormat\RabotoraScriptFormat.g4 by ANTLR 4.6.6
+// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\Rsf\RabotoraScriptFormat.g4 by ANTLR 4.6.6
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -19,7 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace Rabotora.Core.RabotoraScriptFormat {
+namespace Rabotora.Core.Rsf {
 using Antlr4.Runtime.Misc;
 using IParseTreeListener = Antlr4.Runtime.Tree.IParseTreeListener;
 using IToken = Antlr4.Runtime.IToken;
@@ -29,7 +29,19 @@ using IToken = Antlr4.Runtime.IToken;
 /// <see cref="RabotoraScriptFormatParser"/>.
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.6.6")]
+[System.CLSCompliant(false)]
 public interface IRabotoraScriptFormatListener : IParseTreeListener {
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="RabotoraScriptFormatParser.funcWord"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFuncWord([NotNull] RabotoraScriptFormatParser.FuncWordContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="RabotoraScriptFormatParser.funcWord"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFuncWord([NotNull] RabotoraScriptFormatParser.FuncWordContext context);
+
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="RabotoraScriptFormatParser.plainString"/>.
 	/// </summary>
@@ -184,4 +196,4 @@ public interface IRabotoraScriptFormatListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitScript([NotNull] RabotoraScriptFormatParser.ScriptContext context);
 }
-} // namespace Rabotora.Core.RabotoraScriptFormat
+} // namespace Rabotora.Core.Rsf

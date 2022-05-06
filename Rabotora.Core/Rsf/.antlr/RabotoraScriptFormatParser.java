@@ -1,4 +1,4 @@
-// Generated from f:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\RabotoraScriptFormat\RabotoraScriptFormat.g4 by ANTLR 4.8
+// Generated from f:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\Rsf\RabotoraScriptFormat.g4 by ANTLR 4.8
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
@@ -17,19 +17,20 @@ public class RabotoraScriptFormatParser extends Parser {
 		new PredictionContextCache();
 	public static final int
 		Whitespace=1, LineComment=2, Comment=3, WS=4, LParen=5, RParen=6, LBrace=7, 
-		RBrace=8, QttMrk=9, QttMrk2=10, Comma=11, Semicolon=12, QuesMark=13, ClassKeyWord=14, 
-		ActionKeyWord=15, PrivateKeyWord=16, PublicKeyWord=17, InternalKeyWord=18, 
-		StaticKeyWord=19, Int=20, Float=21, Word=22, PlainWord=23, FuncWord=24;
+		RBrace=8, QttMrk=9, QttMrk2=10, Comma=11, Semicolon=12, QuesMark=13, Equals=14, 
+		ClassKeyWord=15, ActionKeyWord=16, PrivateKeyWord=17, PublicKeyWord=18, 
+		InternalKeyWord=19, StaticKeyWord=20, Int=21, Float=22, Word=23, PlainWord=24, 
+		DOT=25;
 	public static final int
-		RULE_plainString = 0, RULE_value = 1, RULE_values = 2, RULE_cmd = 3, RULE_segment = 4, 
-		RULE_segmentBody = 5, RULE_typeDef = 6, RULE_typeDefs = 7, RULE_classDef = 8, 
-		RULE_funcDef = 9, RULE_classSegment = 10, RULE_funcSegment = 11, RULE_body = 12, 
-		RULE_script = 13;
+		RULE_funcWord = 0, RULE_plainString = 1, RULE_value = 2, RULE_values = 3, 
+		RULE_cmd = 4, RULE_segment = 5, RULE_segmentBody = 6, RULE_typeDef = 7, 
+		RULE_typeDefs = 8, RULE_classDef = 9, RULE_funcDef = 10, RULE_classSegment = 11, 
+		RULE_funcSegment = 12, RULE_body = 13, RULE_script = 14;
 	private static String[] makeRuleNames() {
 		return new String[] {
-			"plainString", "value", "values", "cmd", "segment", "segmentBody", "typeDef", 
-			"typeDefs", "classDef", "funcDef", "classSegment", "funcSegment", "body", 
-			"script"
+			"funcWord", "plainString", "value", "values", "cmd", "segment", "segmentBody", 
+			"typeDef", "typeDefs", "classDef", "funcDef", "classSegment", "funcSegment", 
+			"body", "script"
 		};
 	}
 	public static final String[] ruleNames = makeRuleNames();
@@ -37,8 +38,8 @@ public class RabotoraScriptFormatParser extends Parser {
 	private static String[] makeLiteralNames() {
 		return new String[] {
 			null, null, null, null, null, "'('", "')'", "'{'", "'}'", "'''", "'\"'", 
-			"','", "';'", "'?'", "'class'", "'void'", "'private'", "'public'", "'internal'", 
-			"'static'"
+			"','", "';'", "'?'", "'='", "'class'", "'void'", "'private'", "'public'", 
+			"'internal'", "'static'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
@@ -46,8 +47,9 @@ public class RabotoraScriptFormatParser extends Parser {
 		return new String[] {
 			null, "Whitespace", "LineComment", "Comment", "WS", "LParen", "RParen", 
 			"LBrace", "RBrace", "QttMrk", "QttMrk2", "Comma", "Semicolon", "QuesMark", 
-			"ClassKeyWord", "ActionKeyWord", "PrivateKeyWord", "PublicKeyWord", "InternalKeyWord", 
-			"StaticKeyWord", "Int", "Float", "Word", "PlainWord", "FuncWord"
+			"Equals", "ClassKeyWord", "ActionKeyWord", "PrivateKeyWord", "PublicKeyWord", 
+			"InternalKeyWord", "StaticKeyWord", "Int", "Float", "Word", "PlainWord", 
+			"DOT"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -101,6 +103,59 @@ public class RabotoraScriptFormatParser extends Parser {
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
+	public static class FuncWordContext extends ParserRuleContext {
+		public List<TerminalNode> Word() { return getTokens(RabotoraScriptFormatParser.Word); }
+		public TerminalNode Word(int i) {
+			return getToken(RabotoraScriptFormatParser.Word, i);
+		}
+		public List<TerminalNode> DOT() { return getTokens(RabotoraScriptFormatParser.DOT); }
+		public TerminalNode DOT(int i) {
+			return getToken(RabotoraScriptFormatParser.DOT, i);
+		}
+		public FuncWordContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_funcWord; }
+	}
+
+	public final FuncWordContext funcWord() throws RecognitionException {
+		FuncWordContext _localctx = new FuncWordContext(_ctx, getState());
+		enterRule(_localctx, 0, RULE_funcWord);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(30);
+			match(Word);
+			setState(35);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while (_la==DOT) {
+				{
+				{
+				setState(31);
+				match(DOT);
+				setState(32);
+				match(Word);
+				}
+				}
+				setState(37);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
 	public static class PlainStringContext extends ParserRuleContext {
 		public List<TerminalNode> QttMrk() { return getTokens(RabotoraScriptFormatParser.QttMrk); }
 		public TerminalNode QttMrk(int i) {
@@ -119,20 +174,20 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final PlainStringContext plainString() throws RecognitionException {
 		PlainStringContext _localctx = new PlainStringContext(_ctx, getState());
-		enterRule(_localctx, 0, RULE_plainString);
+		enterRule(_localctx, 2, RULE_plainString);
 		try {
-			setState(34);
+			setState(44);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case QttMrk:
 				enterOuterAlt(_localctx, 1);
 				{
 				{
-				setState(28);
+				setState(38);
 				match(QttMrk);
-				setState(29);
+				setState(39);
 				match(PlainWord);
-				setState(30);
+				setState(40);
 				match(QttMrk);
 				}
 				}
@@ -141,11 +196,11 @@ public class RabotoraScriptFormatParser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 				{
-				setState(31);
+				setState(41);
 				match(QttMrk2);
-				setState(32);
+				setState(42);
 				match(PlainWord);
-				setState(33);
+				setState(43);
 				match(QttMrk2);
 				}
 				}
@@ -180,37 +235,37 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final ValueContext value() throws RecognitionException {
 		ValueContext _localctx = new ValueContext(_ctx, getState());
-		enterRule(_localctx, 2, RULE_value);
+		enterRule(_localctx, 4, RULE_value);
 		try {
-			setState(40);
+			setState(50);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case QttMrk:
 			case QttMrk2:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(36);
+				setState(46);
 				plainString();
 				}
 				break;
 			case Word:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(37);
+				setState(47);
 				match(Word);
 				}
 				break;
 			case Int:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(38);
+				setState(48);
 				match(Int);
 				}
 				break;
 			case Float:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(39);
+				setState(49);
 				match(Float);
 				}
 				break;
@@ -250,40 +305,40 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final ValuesContext values() throws RecognitionException {
 		ValuesContext _localctx = new ValuesContext(_ctx, getState());
-		enterRule(_localctx, 4, RULE_values);
+		enterRule(_localctx, 6, RULE_values);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(42);
+			setState(52);
 			match(LParen);
-			setState(51);
+			setState(61);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << QttMrk) | (1L << QttMrk2) | (1L << Int) | (1L << Float) | (1L << Word))) != 0)) {
 				{
-				setState(43);
+				setState(53);
 				value();
-				setState(48);
+				setState(58);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==Comma) {
 					{
 					{
-					setState(44);
+					setState(54);
 					match(Comma);
-					setState(45);
+					setState(55);
 					value();
 					}
 					}
-					setState(50);
+					setState(60);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 			}
 
-			setState(53);
+			setState(63);
 			match(RParen);
 			}
 		}
@@ -299,11 +354,24 @@ public class RabotoraScriptFormatParser extends Parser {
 	}
 
 	public static class CmdContext extends ParserRuleContext {
-		public TerminalNode FuncWord() { return getToken(RabotoraScriptFormatParser.FuncWord, 0); }
+		public FuncWordContext funcWord() {
+			return getRuleContext(FuncWordContext.class,0);
+		}
 		public ValuesContext values() {
 			return getRuleContext(ValuesContext.class,0);
 		}
 		public TerminalNode Semicolon() { return getToken(RabotoraScriptFormatParser.Semicolon, 0); }
+		public List<TerminalNode> Word() { return getTokens(RabotoraScriptFormatParser.Word); }
+		public TerminalNode Word(int i) {
+			return getToken(RabotoraScriptFormatParser.Word, i);
+		}
+		public TerminalNode Equals() { return getToken(RabotoraScriptFormatParser.Equals, 0); }
+		public ValueContext value() {
+			return getRuleContext(ValueContext.class,0);
+		}
+		public PlainStringContext plainString() {
+			return getRuleContext(PlainStringContext.class,0);
+		}
 		public SegmentContext segment() {
 			return getRuleContext(SegmentContext.class,0);
 		}
@@ -315,27 +383,74 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final CmdContext cmd() throws RecognitionException {
 		CmdContext _localctx = new CmdContext(_ctx, getState());
-		enterRule(_localctx, 6, RULE_cmd);
+		enterRule(_localctx, 8, RULE_cmd);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(55);
-			match(FuncWord);
-			setState(56);
-			values();
-			setState(58);
+			setState(83);
 			_errHandler.sync(this);
-			_la = _input.LA(1);
-			if (_la==LBrace) {
+			switch ( getInterpreter().adaptivePredict(_input,7,_ctx) ) {
+			case 1:
 				{
-				setState(57);
-				segment();
+				setState(65);
+				funcWord();
+				setState(66);
+				values();
+				setState(68);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+				if (_la==LBrace) {
+					{
+					setState(67);
+					segment();
+					}
 				}
-			}
 
-			setState(60);
-			match(Semicolon);
+				setState(70);
+				match(Semicolon);
+				}
+				break;
+			case 2:
+				{
+				setState(72);
+				match(Word);
+				setState(73);
+				match(Equals);
+				setState(76);
+				_errHandler.sync(this);
+				switch (_input.LA(1)) {
+				case Word:
+					{
+					setState(74);
+					match(Word);
+					}
+					break;
+				case QttMrk:
+				case QttMrk2:
+					{
+					setState(75);
+					plainString();
+					}
+					break;
+				default:
+					throw new NoViableAltException(this);
+				}
+				setState(78);
+				match(Semicolon);
+				}
+				break;
+			case 3:
+				{
+				setState(79);
+				funcWord();
+				setState(80);
+				value();
+				setState(81);
+				match(Semicolon);
+				}
+				break;
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -363,15 +478,15 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final SegmentContext segment() throws RecognitionException {
 		SegmentContext _localctx = new SegmentContext(_ctx, getState());
-		enterRule(_localctx, 8, RULE_segment);
+		enterRule(_localctx, 10, RULE_segment);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(62);
+			setState(85);
 			match(LBrace);
-			setState(63);
+			setState(86);
 			segmentBody();
-			setState(64);
+			setState(87);
 			match(RBrace);
 			}
 		}
@@ -401,22 +516,22 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final SegmentBodyContext segmentBody() throws RecognitionException {
 		SegmentBodyContext _localctx = new SegmentBodyContext(_ctx, getState());
-		enterRule(_localctx, 10, RULE_segmentBody);
+		enterRule(_localctx, 12, RULE_segmentBody);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(69);
+			setState(92);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==FuncWord) {
+			while (_la==Word) {
 				{
 				{
-				setState(66);
+				setState(89);
 				cmd();
 				}
 				}
-				setState(71);
+				setState(94);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -447,24 +562,24 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final TypeDefContext typeDef() throws RecognitionException {
 		TypeDefContext _localctx = new TypeDefContext(_ctx, getState());
-		enterRule(_localctx, 12, RULE_typeDef);
+		enterRule(_localctx, 14, RULE_typeDef);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(72);
+			setState(95);
 			match(Word);
-			setState(74);
+			setState(97);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==QuesMark) {
 				{
-				setState(73);
+				setState(96);
 				match(QuesMark);
 				}
 			}
 
-			setState(76);
+			setState(99);
 			match(Word);
 			}
 		}
@@ -500,40 +615,40 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final TypeDefsContext typeDefs() throws RecognitionException {
 		TypeDefsContext _localctx = new TypeDefsContext(_ctx, getState());
-		enterRule(_localctx, 14, RULE_typeDefs);
+		enterRule(_localctx, 16, RULE_typeDefs);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(78);
+			setState(101);
 			match(LParen);
-			setState(87);
+			setState(110);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==Word) {
 				{
-				setState(79);
+				setState(102);
 				typeDef();
-				setState(84);
+				setState(107);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==Comma) {
 					{
 					{
-					setState(80);
+					setState(103);
 					match(Comma);
-					setState(81);
+					setState(104);
 					typeDef();
 					}
 					}
-					setState(86);
+					setState(109);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 			}
 
-			setState(89);
+			setState(112);
 			match(RParen);
 			}
 		}
@@ -563,17 +678,17 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final ClassDefContext classDef() throws RecognitionException {
 		ClassDefContext _localctx = new ClassDefContext(_ctx, getState());
-		enterRule(_localctx, 16, RULE_classDef);
+		enterRule(_localctx, 18, RULE_classDef);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(92);
+			setState(115);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) {
 				{
-				setState(91);
+				setState(114);
 				_la = _input.LA(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) ) {
 				_errHandler.recoverInline(this);
@@ -586,19 +701,19 @@ public class RabotoraScriptFormatParser extends Parser {
 				}
 			}
 
-			setState(95);
+			setState(118);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==StaticKeyWord) {
 				{
-				setState(94);
+				setState(117);
 				match(StaticKeyWord);
 				}
 			}
 
-			setState(97);
+			setState(120);
 			match(ClassKeyWord);
-			setState(98);
+			setState(121);
 			match(Word);
 			}
 		}
@@ -634,17 +749,17 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final FuncDefContext funcDef() throws RecognitionException {
 		FuncDefContext _localctx = new FuncDefContext(_ctx, getState());
-		enterRule(_localctx, 18, RULE_funcDef);
+		enterRule(_localctx, 20, RULE_funcDef);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(101);
+			setState(124);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) {
 				{
-				setState(100);
+				setState(123);
 				_la = _input.LA(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) ) {
 				_errHandler.recoverInline(this);
@@ -657,17 +772,17 @@ public class RabotoraScriptFormatParser extends Parser {
 				}
 			}
 
-			setState(104);
+			setState(127);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==StaticKeyWord) {
 				{
-				setState(103);
+				setState(126);
 				match(StaticKeyWord);
 				}
 			}
 
-			setState(106);
+			setState(129);
 			_la = _input.LA(1);
 			if ( !(_la==ActionKeyWord || _la==Word) ) {
 			_errHandler.recoverInline(this);
@@ -677,9 +792,9 @@ public class RabotoraScriptFormatParser extends Parser {
 				_errHandler.reportMatch(this);
 				consume();
 			}
-			setState(107);
+			setState(130);
 			match(Word);
-			setState(108);
+			setState(131);
 			typeDefs();
 			}
 		}
@@ -698,8 +813,13 @@ public class RabotoraScriptFormatParser extends Parser {
 		public ClassDefContext classDef() {
 			return getRuleContext(ClassDefContext.class,0);
 		}
-		public SegmentContext segment() {
-			return getRuleContext(SegmentContext.class,0);
+		public TerminalNode LBrace() { return getToken(RabotoraScriptFormatParser.LBrace, 0); }
+		public TerminalNode RBrace() { return getToken(RabotoraScriptFormatParser.RBrace, 0); }
+		public List<FuncSegmentContext> funcSegment() {
+			return getRuleContexts(FuncSegmentContext.class);
+		}
+		public FuncSegmentContext funcSegment(int i) {
+			return getRuleContext(FuncSegmentContext.class,i);
 		}
 		public ClassSegmentContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -709,14 +829,31 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final ClassSegmentContext classSegment() throws RecognitionException {
 		ClassSegmentContext _localctx = new ClassSegmentContext(_ctx, getState());
-		enterRule(_localctx, 20, RULE_classSegment);
+		enterRule(_localctx, 22, RULE_classSegment);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(110);
+			setState(133);
 			classDef();
-			setState(111);
-			segment();
+			setState(134);
+			match(LBrace);
+			setState(138);
+			_errHandler.sync(this);
+			_la = _input.LA(1);
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << ActionKeyWord) | (1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord) | (1L << StaticKeyWord) | (1L << Word))) != 0)) {
+				{
+				{
+				setState(135);
+				funcSegment();
+				}
+				}
+				setState(140);
+				_errHandler.sync(this);
+				_la = _input.LA(1);
+			}
+			setState(141);
+			match(RBrace);
 			}
 		}
 		catch (RecognitionException re) {
@@ -745,13 +882,13 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final FuncSegmentContext funcSegment() throws RecognitionException {
 		FuncSegmentContext _localctx = new FuncSegmentContext(_ctx, getState());
-		enterRule(_localctx, 22, RULE_funcSegment);
+		enterRule(_localctx, 24, RULE_funcSegment);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(113);
+			setState(143);
 			funcDef();
-			setState(114);
+			setState(144);
 			segment();
 			}
 		}
@@ -787,34 +924,34 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final BodyContext body() throws RecognitionException {
 		BodyContext _localctx = new BodyContext(_ctx, getState());
-		enterRule(_localctx, 24, RULE_body);
+		enterRule(_localctx, 26, RULE_body);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(118); 
+			setState(148); 
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			do {
 				{
-				setState(118);
+				setState(148);
 				_errHandler.sync(this);
-				switch ( getInterpreter().adaptivePredict(_input,13,_ctx) ) {
+				switch ( getInterpreter().adaptivePredict(_input,17,_ctx) ) {
 				case 1:
 					{
-					setState(116);
+					setState(146);
 					classSegment();
 					}
 					break;
 				case 2:
 					{
-					setState(117);
+					setState(147);
 					funcSegment();
 					}
 					break;
 				}
 				}
-				setState(120); 
+				setState(150); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << ClassKeyWord) | (1L << ActionKeyWord) | (1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord) | (1L << StaticKeyWord) | (1L << Word))) != 0) );
@@ -844,13 +981,13 @@ public class RabotoraScriptFormatParser extends Parser {
 
 	public final ScriptContext script() throws RecognitionException {
 		ScriptContext _localctx = new ScriptContext(_ctx, getState());
-		enterRule(_localctx, 26, RULE_script);
+		enterRule(_localctx, 28, RULE_script);
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(122);
+			setState(152);
 			body();
-			setState(123);
+			setState(153);
 			match(EOF);
 			}
 		}
@@ -866,37 +1003,49 @@ public class RabotoraScriptFormatParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\32\u0080\4\2\t\2"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\33\u009e\4\2\t\2"+
 		"\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
-		"\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\3\2\3\2\3\2\3\2\3\2\3\2\5\2"+
-		"%\n\2\3\3\3\3\3\3\3\3\5\3+\n\3\3\4\3\4\3\4\3\4\7\4\61\n\4\f\4\16\4\64"+
-		"\13\4\5\4\66\n\4\3\4\3\4\3\5\3\5\3\5\5\5=\n\5\3\5\3\5\3\6\3\6\3\6\3\6"+
-		"\3\7\7\7F\n\7\f\7\16\7I\13\7\3\b\3\b\5\bM\n\b\3\b\3\b\3\t\3\t\3\t\3\t"+
-		"\7\tU\n\t\f\t\16\tX\13\t\5\tZ\n\t\3\t\3\t\3\n\5\n_\n\n\3\n\5\nb\n\n\3"+
-		"\n\3\n\3\n\3\13\5\13h\n\13\3\13\5\13k\n\13\3\13\3\13\3\13\3\13\3\f\3\f"+
-		"\3\f\3\r\3\r\3\r\3\16\3\16\6\16y\n\16\r\16\16\16z\3\17\3\17\3\17\3\17"+
-		"\2\2\20\2\4\6\b\n\f\16\20\22\24\26\30\32\34\2\4\3\2\22\24\4\2\21\21\30"+
-		"\30\2\u0082\2$\3\2\2\2\4*\3\2\2\2\6,\3\2\2\2\b9\3\2\2\2\n@\3\2\2\2\fG"+
-		"\3\2\2\2\16J\3\2\2\2\20P\3\2\2\2\22^\3\2\2\2\24g\3\2\2\2\26p\3\2\2\2\30"+
-		"s\3\2\2\2\32x\3\2\2\2\34|\3\2\2\2\36\37\7\13\2\2\37 \7\31\2\2 %\7\13\2"+
-		"\2!\"\7\f\2\2\"#\7\31\2\2#%\7\f\2\2$\36\3\2\2\2$!\3\2\2\2%\3\3\2\2\2&"+
-		"+\5\2\2\2\'+\7\30\2\2(+\7\26\2\2)+\7\27\2\2*&\3\2\2\2*\'\3\2\2\2*(\3\2"+
-		"\2\2*)\3\2\2\2+\5\3\2\2\2,\65\7\7\2\2-\62\5\4\3\2./\7\r\2\2/\61\5\4\3"+
-		"\2\60.\3\2\2\2\61\64\3\2\2\2\62\60\3\2\2\2\62\63\3\2\2\2\63\66\3\2\2\2"+
-		"\64\62\3\2\2\2\65-\3\2\2\2\65\66\3\2\2\2\66\67\3\2\2\2\678\7\b\2\28\7"+
-		"\3\2\2\29:\7\32\2\2:<\5\6\4\2;=\5\n\6\2<;\3\2\2\2<=\3\2\2\2=>\3\2\2\2"+
-		">?\7\16\2\2?\t\3\2\2\2@A\7\t\2\2AB\5\f\7\2BC\7\n\2\2C\13\3\2\2\2DF\5\b"+
-		"\5\2ED\3\2\2\2FI\3\2\2\2GE\3\2\2\2GH\3\2\2\2H\r\3\2\2\2IG\3\2\2\2JL\7"+
-		"\30\2\2KM\7\17\2\2LK\3\2\2\2LM\3\2\2\2MN\3\2\2\2NO\7\30\2\2O\17\3\2\2"+
-		"\2PY\7\7\2\2QV\5\16\b\2RS\7\r\2\2SU\5\16\b\2TR\3\2\2\2UX\3\2\2\2VT\3\2"+
-		"\2\2VW\3\2\2\2WZ\3\2\2\2XV\3\2\2\2YQ\3\2\2\2YZ\3\2\2\2Z[\3\2\2\2[\\\7"+
-		"\b\2\2\\\21\3\2\2\2]_\t\2\2\2^]\3\2\2\2^_\3\2\2\2_a\3\2\2\2`b\7\25\2\2"+
-		"a`\3\2\2\2ab\3\2\2\2bc\3\2\2\2cd\7\20\2\2de\7\30\2\2e\23\3\2\2\2fh\t\2"+
-		"\2\2gf\3\2\2\2gh\3\2\2\2hj\3\2\2\2ik\7\25\2\2ji\3\2\2\2jk\3\2\2\2kl\3"+
-		"\2\2\2lm\t\3\2\2mn\7\30\2\2no\5\20\t\2o\25\3\2\2\2pq\5\22\n\2qr\5\n\6"+
-		"\2r\27\3\2\2\2st\5\24\13\2tu\5\n\6\2u\31\3\2\2\2vy\5\26\f\2wy\5\30\r\2"+
-		"xv\3\2\2\2xw\3\2\2\2yz\3\2\2\2zx\3\2\2\2z{\3\2\2\2{\33\3\2\2\2|}\5\32"+
-		"\16\2}~\7\2\2\3~\35\3\2\2\2\21$*\62\65<GLVY^agjxz";
+		"\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\3\2\3\2\3\2\7\2$\n"+
+		"\2\f\2\16\2\'\13\2\3\3\3\3\3\3\3\3\3\3\3\3\5\3/\n\3\3\4\3\4\3\4\3\4\5"+
+		"\4\65\n\4\3\5\3\5\3\5\3\5\7\5;\n\5\f\5\16\5>\13\5\5\5@\n\5\3\5\3\5\3\6"+
+		"\3\6\3\6\5\6G\n\6\3\6\3\6\3\6\3\6\3\6\3\6\5\6O\n\6\3\6\3\6\3\6\3\6\3\6"+
+		"\5\6V\n\6\3\7\3\7\3\7\3\7\3\b\7\b]\n\b\f\b\16\b`\13\b\3\t\3\t\5\td\n\t"+
+		"\3\t\3\t\3\n\3\n\3\n\3\n\7\nl\n\n\f\n\16\no\13\n\5\nq\n\n\3\n\3\n\3\13"+
+		"\5\13v\n\13\3\13\5\13y\n\13\3\13\3\13\3\13\3\f\5\f\177\n\f\3\f\5\f\u0082"+
+		"\n\f\3\f\3\f\3\f\3\f\3\r\3\r\3\r\7\r\u008b\n\r\f\r\16\r\u008e\13\r\3\r"+
+		"\3\r\3\16\3\16\3\16\3\17\3\17\6\17\u0097\n\17\r\17\16\17\u0098\3\20\3"+
+		"\20\3\20\3\20\2\2\21\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36\2\4\3\2\23"+
+		"\25\4\2\22\22\31\31\2\u00a4\2 \3\2\2\2\4.\3\2\2\2\6\64\3\2\2\2\b\66\3"+
+		"\2\2\2\nU\3\2\2\2\fW\3\2\2\2\16^\3\2\2\2\20a\3\2\2\2\22g\3\2\2\2\24u\3"+
+		"\2\2\2\26~\3\2\2\2\30\u0087\3\2\2\2\32\u0091\3\2\2\2\34\u0096\3\2\2\2"+
+		"\36\u009a\3\2\2\2 %\7\31\2\2!\"\7\33\2\2\"$\7\31\2\2#!\3\2\2\2$\'\3\2"+
+		"\2\2%#\3\2\2\2%&\3\2\2\2&\3\3\2\2\2\'%\3\2\2\2()\7\13\2\2)*\7\32\2\2*"+
+		"/\7\13\2\2+,\7\f\2\2,-\7\32\2\2-/\7\f\2\2.(\3\2\2\2.+\3\2\2\2/\5\3\2\2"+
+		"\2\60\65\5\4\3\2\61\65\7\31\2\2\62\65\7\27\2\2\63\65\7\30\2\2\64\60\3"+
+		"\2\2\2\64\61\3\2\2\2\64\62\3\2\2\2\64\63\3\2\2\2\65\7\3\2\2\2\66?\7\7"+
+		"\2\2\67<\5\6\4\289\7\r\2\29;\5\6\4\2:8\3\2\2\2;>\3\2\2\2<:\3\2\2\2<=\3"+
+		"\2\2\2=@\3\2\2\2><\3\2\2\2?\67\3\2\2\2?@\3\2\2\2@A\3\2\2\2AB\7\b\2\2B"+
+		"\t\3\2\2\2CD\5\2\2\2DF\5\b\5\2EG\5\f\7\2FE\3\2\2\2FG\3\2\2\2GH\3\2\2\2"+
+		"HI\7\16\2\2IV\3\2\2\2JK\7\31\2\2KN\7\20\2\2LO\7\31\2\2MO\5\4\3\2NL\3\2"+
+		"\2\2NM\3\2\2\2OP\3\2\2\2PV\7\16\2\2QR\5\2\2\2RS\5\6\4\2ST\7\16\2\2TV\3"+
+		"\2\2\2UC\3\2\2\2UJ\3\2\2\2UQ\3\2\2\2V\13\3\2\2\2WX\7\t\2\2XY\5\16\b\2"+
+		"YZ\7\n\2\2Z\r\3\2\2\2[]\5\n\6\2\\[\3\2\2\2]`\3\2\2\2^\\\3\2\2\2^_\3\2"+
+		"\2\2_\17\3\2\2\2`^\3\2\2\2ac\7\31\2\2bd\7\17\2\2cb\3\2\2\2cd\3\2\2\2d"+
+		"e\3\2\2\2ef\7\31\2\2f\21\3\2\2\2gp\7\7\2\2hm\5\20\t\2ij\7\r\2\2jl\5\20"+
+		"\t\2ki\3\2\2\2lo\3\2\2\2mk\3\2\2\2mn\3\2\2\2nq\3\2\2\2om\3\2\2\2ph\3\2"+
+		"\2\2pq\3\2\2\2qr\3\2\2\2rs\7\b\2\2s\23\3\2\2\2tv\t\2\2\2ut\3\2\2\2uv\3"+
+		"\2\2\2vx\3\2\2\2wy\7\26\2\2xw\3\2\2\2xy\3\2\2\2yz\3\2\2\2z{\7\21\2\2{"+
+		"|\7\31\2\2|\25\3\2\2\2}\177\t\2\2\2~}\3\2\2\2~\177\3\2\2\2\177\u0081\3"+
+		"\2\2\2\u0080\u0082\7\26\2\2\u0081\u0080\3\2\2\2\u0081\u0082\3\2\2\2\u0082"+
+		"\u0083\3\2\2\2\u0083\u0084\t\3\2\2\u0084\u0085\7\31\2\2\u0085\u0086\5"+
+		"\22\n\2\u0086\27\3\2\2\2\u0087\u0088\5\24\13\2\u0088\u008c\7\t\2\2\u0089"+
+		"\u008b\5\32\16\2\u008a\u0089\3\2\2\2\u008b\u008e\3\2\2\2\u008c\u008a\3"+
+		"\2\2\2\u008c\u008d\3\2\2\2\u008d\u008f\3\2\2\2\u008e\u008c\3\2\2\2\u008f"+
+		"\u0090\7\n\2\2\u0090\31\3\2\2\2\u0091\u0092\5\26\f\2\u0092\u0093\5\f\7"+
+		"\2\u0093\33\3\2\2\2\u0094\u0097\5\30\r\2\u0095\u0097\5\32\16\2\u0096\u0094"+
+		"\3\2\2\2\u0096\u0095\3\2\2\2\u0097\u0098\3\2\2\2\u0098\u0096\3\2\2\2\u0098"+
+		"\u0099\3\2\2\2\u0099\35\3\2\2\2\u009a\u009b\5\34\17\2\u009b\u009c\7\2"+
+		"\2\3\u009c\37\3\2\2\2\25%.\64<?FNU^cmpux~\u0081\u008c\u0096\u0098";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

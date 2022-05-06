@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\RabotoraScriptFormat\RabotoraScriptFormat.g4 by ANTLR 4.6.6
+// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\Rsf\RabotoraScriptFormat.g4 by ANTLR 4.6.6
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -19,7 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace Rabotora.Core.RabotoraScriptFormat {
+namespace Rabotora.Core.Rsf {
 
 using Antlr4.Runtime.Misc;
 using IErrorNode = Antlr4.Runtime.Tree.IErrorNode;
@@ -34,6 +34,19 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.6.6")]
 public partial class RabotoraScriptFormatBaseListener : IRabotoraScriptFormatListener {
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="RabotoraScriptFormatParser.funcWord"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFuncWord([NotNull] RabotoraScriptFormatParser.FuncWordContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="RabotoraScriptFormatParser.funcWord"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFuncWord([NotNull] RabotoraScriptFormatParser.FuncWordContext context) { }
+
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="RabotoraScriptFormatParser.plainString"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -229,4 +242,4 @@ public partial class RabotoraScriptFormatBaseListener : IRabotoraScriptFormatLis
 	/// <remarks>The default implementation does nothing.</remarks>
 	public virtual void VisitErrorNode([NotNull] IErrorNode node) { }
 }
-} // namespace Rabotora.Core.RabotoraScriptFormat
+} // namespace Rabotora.Core.Rsf

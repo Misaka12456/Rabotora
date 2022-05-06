@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\RabotoraScriptFormat\RabotoraScriptFormat.g4 by ANTLR 4.6.6
+// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\Rsf\RabotoraScriptFormat.g4 by ANTLR 4.6.6
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -19,7 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace Rabotora.Core.RabotoraScriptFormat {
+namespace Rabotora.Core.Rsf {
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Misc;
@@ -31,30 +31,32 @@ using DFA = Antlr4.Runtime.Dfa.DFA;
 public partial class RabotoraScriptFormatParser : Parser {
 	public const int
 		Whitespace=1, LineComment=2, Comment=3, WS=4, LParen=5, RParen=6, LBrace=7, 
-		RBrace=8, QttMrk=9, QttMrk2=10, Comma=11, Semicolon=12, QuesMark=13, ClassKeyWord=14, 
-		ActionKeyWord=15, PrivateKeyWord=16, PublicKeyWord=17, InternalKeyWord=18, 
-		StaticKeyWord=19, Int=20, Float=21, Word=22, PlainWord=23, FuncWord=24;
+		RBrace=8, QttMrk=9, QttMrk2=10, Comma=11, Semicolon=12, QuesMark=13, Equals=14, 
+		ClassKeyWord=15, ActionKeyWord=16, PrivateKeyWord=17, PublicKeyWord=18, 
+		InternalKeyWord=19, StaticKeyWord=20, Int=21, Float=22, Word=23, PlainWord=24, 
+		DOT=25;
 	public const int
-		RULE_plainString = 0, RULE_value = 1, RULE_values = 2, RULE_cmd = 3, RULE_segment = 4, 
-		RULE_segmentBody = 5, RULE_typeDef = 6, RULE_typeDefs = 7, RULE_classDef = 8, 
-		RULE_funcDef = 9, RULE_classSegment = 10, RULE_funcSegment = 11, RULE_body = 12, 
-		RULE_script = 13;
+		RULE_funcWord = 0, RULE_plainString = 1, RULE_value = 2, RULE_values = 3, 
+		RULE_cmd = 4, RULE_segment = 5, RULE_segmentBody = 6, RULE_typeDef = 7, 
+		RULE_typeDefs = 8, RULE_classDef = 9, RULE_funcDef = 10, RULE_classSegment = 11, 
+		RULE_funcSegment = 12, RULE_body = 13, RULE_script = 14;
 	public static readonly string[] ruleNames = {
-		"plainString", "value", "values", "cmd", "segment", "segmentBody", "typeDef", 
-		"typeDefs", "classDef", "funcDef", "classSegment", "funcSegment", "body", 
-		"script"
+		"funcWord", "plainString", "value", "values", "cmd", "segment", "segmentBody", 
+		"typeDef", "typeDefs", "classDef", "funcDef", "classSegment", "funcSegment", 
+		"body", "script"
 	};
 
 	private static readonly string[] _LiteralNames = {
 		null, null, null, null, null, "'('", "')'", "'{'", "'}'", "'''", "'\"'", 
-		"','", "';'", "'?'", "'class'", "'void'", "'private'", "'public'", "'internal'", 
-		"'static'"
+		"','", "';'", "'?'", "'='", "'class'", "'void'", "'private'", "'public'", 
+		"'internal'", "'static'"
 	};
 	private static readonly string[] _SymbolicNames = {
 		null, "Whitespace", "LineComment", "Comment", "WS", "LParen", "RParen", 
 		"LBrace", "RBrace", "QttMrk", "QttMrk2", "Comma", "Semicolon", "QuesMark", 
-		"ClassKeyWord", "ActionKeyWord", "PrivateKeyWord", "PublicKeyWord", "InternalKeyWord", 
-		"StaticKeyWord", "Int", "Float", "Word", "PlainWord", "FuncWord"
+		"Equals", "ClassKeyWord", "ActionKeyWord", "PrivateKeyWord", "PublicKeyWord", 
+		"InternalKeyWord", "StaticKeyWord", "Int", "Float", "Word", "PlainWord", 
+		"DOT"
 	};
 	public static readonly IVocabulary DefaultVocabulary = new Vocabulary(_LiteralNames, _SymbolicNames);
 
@@ -106,6 +108,71 @@ public partial class RabotoraScriptFormatParser : Parser {
 	{
 		_interp = new ParserATNSimulator(this,_ATN);
 	}
+	public partial class FuncWordContext : ParserRuleContext {
+		public ITerminalNode[] Word() { return GetTokens(RabotoraScriptFormatParser.Word); }
+		public ITerminalNode Word(int i) {
+			return GetToken(RabotoraScriptFormatParser.Word, i);
+		}
+		public ITerminalNode[] DOT() { return GetTokens(RabotoraScriptFormatParser.DOT); }
+		public ITerminalNode DOT(int i) {
+			return GetToken(RabotoraScriptFormatParser.DOT, i);
+		}
+		public FuncWordContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_funcWord; } }
+		public override void EnterRule(IParseTreeListener listener) {
+			IRabotoraScriptFormatListener typedListener = listener as IRabotoraScriptFormatListener;
+			if (typedListener != null) typedListener.EnterFuncWord(this);
+		}
+		public override void ExitRule(IParseTreeListener listener) {
+			IRabotoraScriptFormatListener typedListener = listener as IRabotoraScriptFormatListener;
+			if (typedListener != null) typedListener.ExitFuncWord(this);
+		}
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IRabotoraScriptFormatVisitor<TResult> typedVisitor = visitor as IRabotoraScriptFormatVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitFuncWord(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public FuncWordContext funcWord() {
+		FuncWordContext _localctx = new FuncWordContext(_ctx, State);
+		EnterRule(_localctx, 0, RULE_funcWord);
+		int _la;
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 30; Match(Word);
+			State = 35;
+			_errHandler.Sync(this);
+			_la = _input.La(1);
+			while (_la==DOT) {
+				{
+				{
+				State = 31; Match(DOT);
+				State = 32; Match(Word);
+				}
+				}
+				State = 37;
+				_errHandler.Sync(this);
+				_la = _input.La(1);
+			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.ReportError(this, re);
+			_errHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
 	public partial class PlainStringContext : ParserRuleContext {
 		public ITerminalNode[] QttMrk() { return GetTokens(RabotoraScriptFormatParser.QttMrk); }
 		public ITerminalNode QttMrk(int i) {
@@ -139,18 +206,18 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public PlainStringContext plainString() {
 		PlainStringContext _localctx = new PlainStringContext(_ctx, State);
-		EnterRule(_localctx, 0, RULE_plainString);
+		EnterRule(_localctx, 2, RULE_plainString);
 		try {
-			State = 34;
+			State = 44;
 			_errHandler.Sync(this);
 			switch (_input.La(1)) {
 			case QttMrk:
 				EnterOuterAlt(_localctx, 1);
 				{
 				{
-				State = 28; Match(QttMrk);
-				State = 29; Match(PlainWord);
-				State = 30; Match(QttMrk);
+				State = 38; Match(QttMrk);
+				State = 39; Match(PlainWord);
+				State = 40; Match(QttMrk);
 				}
 				}
 				break;
@@ -158,9 +225,9 @@ public partial class RabotoraScriptFormatParser : Parser {
 				EnterOuterAlt(_localctx, 2);
 				{
 				{
-				State = 31; Match(QttMrk2);
-				State = 32; Match(PlainWord);
-				State = 33; Match(QttMrk2);
+				State = 41; Match(QttMrk2);
+				State = 42; Match(PlainWord);
+				State = 43; Match(QttMrk2);
 				}
 				}
 				break;
@@ -209,34 +276,34 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public ValueContext value() {
 		ValueContext _localctx = new ValueContext(_ctx, State);
-		EnterRule(_localctx, 2, RULE_value);
+		EnterRule(_localctx, 4, RULE_value);
 		try {
-			State = 40;
+			State = 50;
 			_errHandler.Sync(this);
 			switch (_input.La(1)) {
 			case QttMrk:
 			case QttMrk2:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 36; plainString();
+				State = 46; plainString();
 				}
 				break;
 			case Word:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 37; Match(Word);
+				State = 47; Match(Word);
 				}
 				break;
 			case Int:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 38; Match(Int);
+				State = 48; Match(Int);
 				}
 				break;
 			case Float:
 				EnterOuterAlt(_localctx, 4);
 				{
-				State = 39; Match(Float);
+				State = 49; Match(Float);
 				}
 				break;
 			default:
@@ -290,36 +357,36 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public ValuesContext values() {
 		ValuesContext _localctx = new ValuesContext(_ctx, State);
-		EnterRule(_localctx, 4, RULE_values);
+		EnterRule(_localctx, 6, RULE_values);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 42; Match(LParen);
-			State = 51;
+			State = 52; Match(LParen);
+			State = 61;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << QttMrk) | (1L << QttMrk2) | (1L << Int) | (1L << Float) | (1L << Word))) != 0)) {
 				{
-				State = 43; value();
-				State = 48;
+				State = 53; value();
+				State = 58;
 				_errHandler.Sync(this);
 				_la = _input.La(1);
 				while (_la==Comma) {
 					{
 					{
-					State = 44; Match(Comma);
-					State = 45; value();
+					State = 54; Match(Comma);
+					State = 55; value();
 					}
 					}
-					State = 50;
+					State = 60;
 					_errHandler.Sync(this);
 					_la = _input.La(1);
 				}
 				}
 			}
 
-			State = 53; Match(RParen);
+			State = 63; Match(RParen);
 			}
 		}
 		catch (RecognitionException re) {
@@ -334,11 +401,24 @@ public partial class RabotoraScriptFormatParser : Parser {
 	}
 
 	public partial class CmdContext : ParserRuleContext {
-		public ITerminalNode FuncWord() { return GetToken(RabotoraScriptFormatParser.FuncWord, 0); }
+		public FuncWordContext funcWord() {
+			return GetRuleContext<FuncWordContext>(0);
+		}
 		public ValuesContext values() {
 			return GetRuleContext<ValuesContext>(0);
 		}
 		public ITerminalNode Semicolon() { return GetToken(RabotoraScriptFormatParser.Semicolon, 0); }
+		public ITerminalNode[] Word() { return GetTokens(RabotoraScriptFormatParser.Word); }
+		public ITerminalNode Word(int i) {
+			return GetToken(RabotoraScriptFormatParser.Word, i);
+		}
+		public ITerminalNode Equals() { return GetToken(RabotoraScriptFormatParser.Equals, 0); }
+		public ValueContext value() {
+			return GetRuleContext<ValueContext>(0);
+		}
+		public PlainStringContext plainString() {
+			return GetRuleContext<PlainStringContext>(0);
+		}
 		public SegmentContext segment() {
 			return GetRuleContext<SegmentContext>(0);
 		}
@@ -365,23 +445,64 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public CmdContext cmd() {
 		CmdContext _localctx = new CmdContext(_ctx, State);
-		EnterRule(_localctx, 6, RULE_cmd);
+		EnterRule(_localctx, 8, RULE_cmd);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 55; Match(FuncWord);
-			State = 56; values();
-			State = 58;
+			State = 83;
 			_errHandler.Sync(this);
-			_la = _input.La(1);
-			if (_la==LBrace) {
+			switch ( Interpreter.AdaptivePredict(_input,7,_ctx) ) {
+			case 1:
 				{
-				State = 57; segment();
+				State = 65; funcWord();
+				State = 66; values();
+				State = 68;
+				_errHandler.Sync(this);
+				_la = _input.La(1);
+				if (_la==LBrace) {
+					{
+					State = 67; segment();
+					}
 				}
-			}
 
-			State = 60; Match(Semicolon);
+				State = 70; Match(Semicolon);
+				}
+				break;
+
+			case 2:
+				{
+				State = 72; Match(Word);
+				State = 73; Match(Equals);
+				State = 76;
+				_errHandler.Sync(this);
+				switch (_input.La(1)) {
+				case Word:
+					{
+					State = 74; Match(Word);
+					}
+					break;
+				case QttMrk:
+				case QttMrk2:
+					{
+					State = 75; plainString();
+					}
+					break;
+				default:
+					throw new NoViableAltException(this);
+				}
+				State = 78; Match(Semicolon);
+				}
+				break;
+
+			case 3:
+				{
+				State = 79; funcWord();
+				State = 80; value();
+				State = 81; Match(Semicolon);
+				}
+				break;
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -424,13 +545,13 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public SegmentContext segment() {
 		SegmentContext _localctx = new SegmentContext(_ctx, State);
-		EnterRule(_localctx, 8, RULE_segment);
+		EnterRule(_localctx, 10, RULE_segment);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 62; Match(LBrace);
-			State = 63; segmentBody();
-			State = 64; Match(RBrace);
+			State = 85; Match(LBrace);
+			State = 86; segmentBody();
+			State = 87; Match(RBrace);
 			}
 		}
 		catch (RecognitionException re) {
@@ -474,21 +595,21 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public SegmentBodyContext segmentBody() {
 		SegmentBodyContext _localctx = new SegmentBodyContext(_ctx, State);
-		EnterRule(_localctx, 10, RULE_segmentBody);
+		EnterRule(_localctx, 12, RULE_segmentBody);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 69;
+			State = 92;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
-			while (_la==FuncWord) {
+			while (_la==Word) {
 				{
 				{
-				State = 66; cmd();
+				State = 89; cmd();
 				}
 				}
-				State = 71;
+				State = 94;
 				_errHandler.Sync(this);
 				_la = _input.La(1);
 			}
@@ -534,22 +655,22 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public TypeDefContext typeDef() {
 		TypeDefContext _localctx = new TypeDefContext(_ctx, State);
-		EnterRule(_localctx, 12, RULE_typeDef);
+		EnterRule(_localctx, 14, RULE_typeDef);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 72; Match(Word);
-			State = 74;
+			State = 95; Match(Word);
+			State = 97;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if (_la==QuesMark) {
 				{
-				State = 73; Match(QuesMark);
+				State = 96; Match(QuesMark);
 				}
 			}
 
-			State = 76; Match(Word);
+			State = 99; Match(Word);
 			}
 		}
 		catch (RecognitionException re) {
@@ -599,36 +720,36 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public TypeDefsContext typeDefs() {
 		TypeDefsContext _localctx = new TypeDefsContext(_ctx, State);
-		EnterRule(_localctx, 14, RULE_typeDefs);
+		EnterRule(_localctx, 16, RULE_typeDefs);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 78; Match(LParen);
-			State = 87;
+			State = 101; Match(LParen);
+			State = 110;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if (_la==Word) {
 				{
-				State = 79; typeDef();
-				State = 84;
+				State = 102; typeDef();
+				State = 107;
 				_errHandler.Sync(this);
 				_la = _input.La(1);
 				while (_la==Comma) {
 					{
 					{
-					State = 80; Match(Comma);
-					State = 81; typeDef();
+					State = 103; Match(Comma);
+					State = 104; typeDef();
 					}
 					}
-					State = 86;
+					State = 109;
 					_errHandler.Sync(this);
 					_la = _input.La(1);
 				}
 				}
 			}
 
-			State = 89; Match(RParen);
+			State = 112; Match(RParen);
 			}
 		}
 		catch (RecognitionException re) {
@@ -672,17 +793,17 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public ClassDefContext classDef() {
 		ClassDefContext _localctx = new ClassDefContext(_ctx, State);
-		EnterRule(_localctx, 16, RULE_classDef);
+		EnterRule(_localctx, 18, RULE_classDef);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 92;
+			State = 115;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) {
 				{
-				State = 91;
+				State = 114;
 				_la = _input.La(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) ) {
 				_errHandler.RecoverInline(this);
@@ -697,17 +818,17 @@ public partial class RabotoraScriptFormatParser : Parser {
 				}
 			}
 
-			State = 95;
+			State = 118;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if (_la==StaticKeyWord) {
 				{
-				State = 94; Match(StaticKeyWord);
+				State = 117; Match(StaticKeyWord);
 				}
 			}
 
-			State = 97; Match(ClassKeyWord);
-			State = 98; Match(Word);
+			State = 120; Match(ClassKeyWord);
+			State = 121; Match(Word);
 			}
 		}
 		catch (RecognitionException re) {
@@ -757,17 +878,17 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public FuncDefContext funcDef() {
 		FuncDefContext _localctx = new FuncDefContext(_ctx, State);
-		EnterRule(_localctx, 18, RULE_funcDef);
+		EnterRule(_localctx, 20, RULE_funcDef);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 101;
+			State = 124;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) {
 				{
-				State = 100;
+				State = 123;
 				_la = _input.La(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord))) != 0)) ) {
 				_errHandler.RecoverInline(this);
@@ -782,16 +903,16 @@ public partial class RabotoraScriptFormatParser : Parser {
 				}
 			}
 
-			State = 104;
+			State = 127;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			if (_la==StaticKeyWord) {
 				{
-				State = 103; Match(StaticKeyWord);
+				State = 126; Match(StaticKeyWord);
 				}
 			}
 
-			State = 106;
+			State = 129;
 			_la = _input.La(1);
 			if ( !(_la==ActionKeyWord || _la==Word) ) {
 			_errHandler.RecoverInline(this);
@@ -803,8 +924,8 @@ public partial class RabotoraScriptFormatParser : Parser {
 				_errHandler.ReportMatch(this);
 				Consume();
 			}
-			State = 107; Match(Word);
-			State = 108; typeDefs();
+			State = 130; Match(Word);
+			State = 131; typeDefs();
 			}
 		}
 		catch (RecognitionException re) {
@@ -822,8 +943,13 @@ public partial class RabotoraScriptFormatParser : Parser {
 		public ClassDefContext classDef() {
 			return GetRuleContext<ClassDefContext>(0);
 		}
-		public SegmentContext segment() {
-			return GetRuleContext<SegmentContext>(0);
+		public ITerminalNode LBrace() { return GetToken(RabotoraScriptFormatParser.LBrace, 0); }
+		public ITerminalNode RBrace() { return GetToken(RabotoraScriptFormatParser.RBrace, 0); }
+		public FuncSegmentContext[] funcSegment() {
+			return GetRuleContexts<FuncSegmentContext>();
+		}
+		public FuncSegmentContext funcSegment(int i) {
+			return GetRuleContext<FuncSegmentContext>(i);
 		}
 		public ClassSegmentContext(ParserRuleContext parent, int invokingState)
 			: base(parent, invokingState)
@@ -848,12 +974,27 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public ClassSegmentContext classSegment() {
 		ClassSegmentContext _localctx = new ClassSegmentContext(_ctx, State);
-		EnterRule(_localctx, 20, RULE_classSegment);
+		EnterRule(_localctx, 22, RULE_classSegment);
+		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 110; classDef();
-			State = 111; segment();
+			State = 133; classDef();
+			State = 134; Match(LBrace);
+			State = 138;
+			_errHandler.Sync(this);
+			_la = _input.La(1);
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << ActionKeyWord) | (1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord) | (1L << StaticKeyWord) | (1L << Word))) != 0)) {
+				{
+				{
+				State = 135; funcSegment();
+				}
+				}
+				State = 140;
+				_errHandler.Sync(this);
+				_la = _input.La(1);
+			}
+			State = 141; Match(RBrace);
 			}
 		}
 		catch (RecognitionException re) {
@@ -897,12 +1038,12 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public FuncSegmentContext funcSegment() {
 		FuncSegmentContext _localctx = new FuncSegmentContext(_ctx, State);
-		EnterRule(_localctx, 22, RULE_funcSegment);
+		EnterRule(_localctx, 24, RULE_funcSegment);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 113; funcDef();
-			State = 114; segment();
+			State = 143; funcDef();
+			State = 144; segment();
 			}
 		}
 		catch (RecognitionException re) {
@@ -952,33 +1093,33 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public BodyContext body() {
 		BodyContext _localctx = new BodyContext(_ctx, State);
-		EnterRule(_localctx, 24, RULE_body);
+		EnterRule(_localctx, 26, RULE_body);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 118;
+			State = 148;
 			_errHandler.Sync(this);
 			_la = _input.La(1);
 			do {
 				{
-				State = 118;
+				State = 148;
 				_errHandler.Sync(this);
-				switch ( Interpreter.AdaptivePredict(_input,13,_ctx) ) {
+				switch ( Interpreter.AdaptivePredict(_input,17,_ctx) ) {
 				case 1:
 					{
-					State = 116; classSegment();
+					State = 146; classSegment();
 					}
 					break;
 
 				case 2:
 					{
-					State = 117; funcSegment();
+					State = 147; funcSegment();
 					}
 					break;
 				}
 				}
-				State = 120;
+				State = 150;
 				_errHandler.Sync(this);
 				_la = _input.La(1);
 			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << ClassKeyWord) | (1L << ActionKeyWord) | (1L << PrivateKeyWord) | (1L << PublicKeyWord) | (1L << InternalKeyWord) | (1L << StaticKeyWord) | (1L << Word))) != 0) );
@@ -1023,12 +1164,12 @@ public partial class RabotoraScriptFormatParser : Parser {
 	[RuleVersion(0)]
 	public ScriptContext script() {
 		ScriptContext _localctx = new ScriptContext(_ctx, State);
-		EnterRule(_localctx, 26, RULE_script);
+		EnterRule(_localctx, 28, RULE_script);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 122; body();
-			State = 123; Match(Eof);
+			State = 152; body();
+			State = 153; Match(Eof);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1043,49 +1184,62 @@ public partial class RabotoraScriptFormatParser : Parser {
 	}
 
 	public static readonly string _serializedATN =
-		"\x3\xAF6F\x8320\x479D\xB75C\x4880\x1605\x191C\xAB37\x3\x1A\x80\x4\x2\t"+
+		"\x3\xAF6F\x8320\x479D\xB75C\x4880\x1605\x191C\xAB37\x3\x1B\x9E\x4\x2\t"+
 		"\x2\x4\x3\t\x3\x4\x4\t\x4\x4\x5\t\x5\x4\x6\t\x6\x4\a\t\a\x4\b\t\b\x4\t"+
-		"\t\t\x4\n\t\n\x4\v\t\v\x4\f\t\f\x4\r\t\r\x4\xE\t\xE\x4\xF\t\xF\x3\x2\x3"+
-		"\x2\x3\x2\x3\x2\x3\x2\x3\x2\x5\x2%\n\x2\x3\x3\x3\x3\x3\x3\x3\x3\x5\x3"+
-		"+\n\x3\x3\x4\x3\x4\x3\x4\x3\x4\a\x4\x31\n\x4\f\x4\xE\x4\x34\v\x4\x5\x4"+
-		"\x36\n\x4\x3\x4\x3\x4\x3\x5\x3\x5\x3\x5\x5\x5=\n\x5\x3\x5\x3\x5\x3\x6"+
-		"\x3\x6\x3\x6\x3\x6\x3\a\a\a\x46\n\a\f\a\xE\aI\v\a\x3\b\x3\b\x5\bM\n\b"+
-		"\x3\b\x3\b\x3\t\x3\t\x3\t\x3\t\a\tU\n\t\f\t\xE\tX\v\t\x5\tZ\n\t\x3\t\x3"+
-		"\t\x3\n\x5\n_\n\n\x3\n\x5\n\x62\n\n\x3\n\x3\n\x3\n\x3\v\x5\vh\n\v\x3\v"+
-		"\x5\vk\n\v\x3\v\x3\v\x3\v\x3\v\x3\f\x3\f\x3\f\x3\r\x3\r\x3\r\x3\xE\x3"+
-		"\xE\x6\xEy\n\xE\r\xE\xE\xEz\x3\xF\x3\xF\x3\xF\x3\xF\x2\x2\x2\x10\x2\x2"+
-		"\x4\x2\x6\x2\b\x2\n\x2\f\x2\xE\x2\x10\x2\x12\x2\x14\x2\x16\x2\x18\x2\x1A"+
-		"\x2\x1C\x2\x2\x4\x3\x2\x12\x14\x4\x2\x11\x11\x18\x18\x82\x2$\x3\x2\x2"+
-		"\x2\x4*\x3\x2\x2\x2\x6,\x3\x2\x2\x2\b\x39\x3\x2\x2\x2\n@\x3\x2\x2\x2\f"+
-		"G\x3\x2\x2\x2\xEJ\x3\x2\x2\x2\x10P\x3\x2\x2\x2\x12^\x3\x2\x2\x2\x14g\x3"+
-		"\x2\x2\x2\x16p\x3\x2\x2\x2\x18s\x3\x2\x2\x2\x1Ax\x3\x2\x2\x2\x1C|\x3\x2"+
-		"\x2\x2\x1E\x1F\a\v\x2\x2\x1F \a\x19\x2\x2 %\a\v\x2\x2!\"\a\f\x2\x2\"#"+
-		"\a\x19\x2\x2#%\a\f\x2\x2$\x1E\x3\x2\x2\x2$!\x3\x2\x2\x2%\x3\x3\x2\x2\x2"+
-		"&+\x5\x2\x2\x2\'+\a\x18\x2\x2(+\a\x16\x2\x2)+\a\x17\x2\x2*&\x3\x2\x2\x2"+
-		"*\'\x3\x2\x2\x2*(\x3\x2\x2\x2*)\x3\x2\x2\x2+\x5\x3\x2\x2\x2,\x35\a\a\x2"+
-		"\x2-\x32\x5\x4\x3\x2./\a\r\x2\x2/\x31\x5\x4\x3\x2\x30.\x3\x2\x2\x2\x31"+
-		"\x34\x3\x2\x2\x2\x32\x30\x3\x2\x2\x2\x32\x33\x3\x2\x2\x2\x33\x36\x3\x2"+
-		"\x2\x2\x34\x32\x3\x2\x2\x2\x35-\x3\x2\x2\x2\x35\x36\x3\x2\x2\x2\x36\x37"+
-		"\x3\x2\x2\x2\x37\x38\a\b\x2\x2\x38\a\x3\x2\x2\x2\x39:\a\x1A\x2\x2:<\x5"+
-		"\x6\x4\x2;=\x5\n\x6\x2<;\x3\x2\x2\x2<=\x3\x2\x2\x2=>\x3\x2\x2\x2>?\a\xE"+
-		"\x2\x2?\t\x3\x2\x2\x2@\x41\a\t\x2\x2\x41\x42\x5\f\a\x2\x42\x43\a\n\x2"+
-		"\x2\x43\v\x3\x2\x2\x2\x44\x46\x5\b\x5\x2\x45\x44\x3\x2\x2\x2\x46I\x3\x2"+
-		"\x2\x2G\x45\x3\x2\x2\x2GH\x3\x2\x2\x2H\r\x3\x2\x2\x2IG\x3\x2\x2\x2JL\a"+
-		"\x18\x2\x2KM\a\xF\x2\x2LK\x3\x2\x2\x2LM\x3\x2\x2\x2MN\x3\x2\x2\x2NO\a"+
-		"\x18\x2\x2O\xF\x3\x2\x2\x2PY\a\a\x2\x2QV\x5\xE\b\x2RS\a\r\x2\x2SU\x5\xE"+
-		"\b\x2TR\x3\x2\x2\x2UX\x3\x2\x2\x2VT\x3\x2\x2\x2VW\x3\x2\x2\x2WZ\x3\x2"+
-		"\x2\x2XV\x3\x2\x2\x2YQ\x3\x2\x2\x2YZ\x3\x2\x2\x2Z[\x3\x2\x2\x2[\\\a\b"+
-		"\x2\x2\\\x11\x3\x2\x2\x2]_\t\x2\x2\x2^]\x3\x2\x2\x2^_\x3\x2\x2\x2_\x61"+
-		"\x3\x2\x2\x2`\x62\a\x15\x2\x2\x61`\x3\x2\x2\x2\x61\x62\x3\x2\x2\x2\x62"+
-		"\x63\x3\x2\x2\x2\x63\x64\a\x10\x2\x2\x64\x65\a\x18\x2\x2\x65\x13\x3\x2"+
-		"\x2\x2\x66h\t\x2\x2\x2g\x66\x3\x2\x2\x2gh\x3\x2\x2\x2hj\x3\x2\x2\x2ik"+
-		"\a\x15\x2\x2ji\x3\x2\x2\x2jk\x3\x2\x2\x2kl\x3\x2\x2\x2lm\t\x3\x2\x2mn"+
-		"\a\x18\x2\x2no\x5\x10\t\x2o\x15\x3\x2\x2\x2pq\x5\x12\n\x2qr\x5\n\x6\x2"+
-		"r\x17\x3\x2\x2\x2st\x5\x14\v\x2tu\x5\n\x6\x2u\x19\x3\x2\x2\x2vy\x5\x16"+
-		"\f\x2wy\x5\x18\r\x2xv\x3\x2\x2\x2xw\x3\x2\x2\x2yz\x3\x2\x2\x2zx\x3\x2"+
-		"\x2\x2z{\x3\x2\x2\x2{\x1B\x3\x2\x2\x2|}\x5\x1A\xE\x2}~\a\x2\x2\x3~\x1D"+
-		"\x3\x2\x2\x2\x11$*\x32\x35<GLVY^\x61gjxz";
+		"\t\t\x4\n\t\n\x4\v\t\v\x4\f\t\f\x4\r\t\r\x4\xE\t\xE\x4\xF\t\xF\x4\x10"+
+		"\t\x10\x3\x2\x3\x2\x3\x2\a\x2$\n\x2\f\x2\xE\x2\'\v\x2\x3\x3\x3\x3\x3\x3"+
+		"\x3\x3\x3\x3\x3\x3\x5\x3/\n\x3\x3\x4\x3\x4\x3\x4\x3\x4\x5\x4\x35\n\x4"+
+		"\x3\x5\x3\x5\x3\x5\x3\x5\a\x5;\n\x5\f\x5\xE\x5>\v\x5\x5\x5@\n\x5\x3\x5"+
+		"\x3\x5\x3\x6\x3\x6\x3\x6\x5\x6G\n\x6\x3\x6\x3\x6\x3\x6\x3\x6\x3\x6\x3"+
+		"\x6\x5\x6O\n\x6\x3\x6\x3\x6\x3\x6\x3\x6\x3\x6\x5\x6V\n\x6\x3\a\x3\a\x3"+
+		"\a\x3\a\x3\b\a\b]\n\b\f\b\xE\b`\v\b\x3\t\x3\t\x5\t\x64\n\t\x3\t\x3\t\x3"+
+		"\n\x3\n\x3\n\x3\n\a\nl\n\n\f\n\xE\no\v\n\x5\nq\n\n\x3\n\x3\n\x3\v\x5\v"+
+		"v\n\v\x3\v\x5\vy\n\v\x3\v\x3\v\x3\v\x3\f\x5\f\x7F\n\f\x3\f\x5\f\x82\n"+
+		"\f\x3\f\x3\f\x3\f\x3\f\x3\r\x3\r\x3\r\a\r\x8B\n\r\f\r\xE\r\x8E\v\r\x3"+
+		"\r\x3\r\x3\xE\x3\xE\x3\xE\x3\xF\x3\xF\x6\xF\x97\n\xF\r\xF\xE\xF\x98\x3"+
+		"\x10\x3\x10\x3\x10\x3\x10\x2\x2\x2\x11\x2\x2\x4\x2\x6\x2\b\x2\n\x2\f\x2"+
+		"\xE\x2\x10\x2\x12\x2\x14\x2\x16\x2\x18\x2\x1A\x2\x1C\x2\x1E\x2\x2\x4\x3"+
+		"\x2\x13\x15\x4\x2\x12\x12\x19\x19\xA4\x2 \x3\x2\x2\x2\x4.\x3\x2\x2\x2"+
+		"\x6\x34\x3\x2\x2\x2\b\x36\x3\x2\x2\x2\nU\x3\x2\x2\x2\fW\x3\x2\x2\x2\xE"+
+		"^\x3\x2\x2\x2\x10\x61\x3\x2\x2\x2\x12g\x3\x2\x2\x2\x14u\x3\x2\x2\x2\x16"+
+		"~\x3\x2\x2\x2\x18\x87\x3\x2\x2\x2\x1A\x91\x3\x2\x2\x2\x1C\x96\x3\x2\x2"+
+		"\x2\x1E\x9A\x3\x2\x2\x2 %\a\x19\x2\x2!\"\a\x1B\x2\x2\"$\a\x19\x2\x2#!"+
+		"\x3\x2\x2\x2$\'\x3\x2\x2\x2%#\x3\x2\x2\x2%&\x3\x2\x2\x2&\x3\x3\x2\x2\x2"+
+		"\'%\x3\x2\x2\x2()\a\v\x2\x2)*\a\x1A\x2\x2*/\a\v\x2\x2+,\a\f\x2\x2,-\a"+
+		"\x1A\x2\x2-/\a\f\x2\x2.(\x3\x2\x2\x2.+\x3\x2\x2\x2/\x5\x3\x2\x2\x2\x30"+
+		"\x35\x5\x4\x3\x2\x31\x35\a\x19\x2\x2\x32\x35\a\x17\x2\x2\x33\x35\a\x18"+
+		"\x2\x2\x34\x30\x3\x2\x2\x2\x34\x31\x3\x2\x2\x2\x34\x32\x3\x2\x2\x2\x34"+
+		"\x33\x3\x2\x2\x2\x35\a\x3\x2\x2\x2\x36?\a\a\x2\x2\x37<\x5\x6\x4\x2\x38"+
+		"\x39\a\r\x2\x2\x39;\x5\x6\x4\x2:\x38\x3\x2\x2\x2;>\x3\x2\x2\x2<:\x3\x2"+
+		"\x2\x2<=\x3\x2\x2\x2=@\x3\x2\x2\x2><\x3\x2\x2\x2?\x37\x3\x2\x2\x2?@\x3"+
+		"\x2\x2\x2@\x41\x3\x2\x2\x2\x41\x42\a\b\x2\x2\x42\t\x3\x2\x2\x2\x43\x44"+
+		"\x5\x2\x2\x2\x44\x46\x5\b\x5\x2\x45G\x5\f\a\x2\x46\x45\x3\x2\x2\x2\x46"+
+		"G\x3\x2\x2\x2GH\x3\x2\x2\x2HI\a\xE\x2\x2IV\x3\x2\x2\x2JK\a\x19\x2\x2K"+
+		"N\a\x10\x2\x2LO\a\x19\x2\x2MO\x5\x4\x3\x2NL\x3\x2\x2\x2NM\x3\x2\x2\x2"+
+		"OP\x3\x2\x2\x2PV\a\xE\x2\x2QR\x5\x2\x2\x2RS\x5\x6\x4\x2ST\a\xE\x2\x2T"+
+		"V\x3\x2\x2\x2U\x43\x3\x2\x2\x2UJ\x3\x2\x2\x2UQ\x3\x2\x2\x2V\v\x3\x2\x2"+
+		"\x2WX\a\t\x2\x2XY\x5\xE\b\x2YZ\a\n\x2\x2Z\r\x3\x2\x2\x2[]\x5\n\x6\x2\\"+
+		"[\x3\x2\x2\x2]`\x3\x2\x2\x2^\\\x3\x2\x2\x2^_\x3\x2\x2\x2_\xF\x3\x2\x2"+
+		"\x2`^\x3\x2\x2\x2\x61\x63\a\x19\x2\x2\x62\x64\a\xF\x2\x2\x63\x62\x3\x2"+
+		"\x2\x2\x63\x64\x3\x2\x2\x2\x64\x65\x3\x2\x2\x2\x65\x66\a\x19\x2\x2\x66"+
+		"\x11\x3\x2\x2\x2gp\a\a\x2\x2hm\x5\x10\t\x2ij\a\r\x2\x2jl\x5\x10\t\x2k"+
+		"i\x3\x2\x2\x2lo\x3\x2\x2\x2mk\x3\x2\x2\x2mn\x3\x2\x2\x2nq\x3\x2\x2\x2"+
+		"om\x3\x2\x2\x2ph\x3\x2\x2\x2pq\x3\x2\x2\x2qr\x3\x2\x2\x2rs\a\b\x2\x2s"+
+		"\x13\x3\x2\x2\x2tv\t\x2\x2\x2ut\x3\x2\x2\x2uv\x3\x2\x2\x2vx\x3\x2\x2\x2"+
+		"wy\a\x16\x2\x2xw\x3\x2\x2\x2xy\x3\x2\x2\x2yz\x3\x2\x2\x2z{\a\x11\x2\x2"+
+		"{|\a\x19\x2\x2|\x15\x3\x2\x2\x2}\x7F\t\x2\x2\x2~}\x3\x2\x2\x2~\x7F\x3"+
+		"\x2\x2\x2\x7F\x81\x3\x2\x2\x2\x80\x82\a\x16\x2\x2\x81\x80\x3\x2\x2\x2"+
+		"\x81\x82\x3\x2\x2\x2\x82\x83\x3\x2\x2\x2\x83\x84\t\x3\x2\x2\x84\x85\a"+
+		"\x19\x2\x2\x85\x86\x5\x12\n\x2\x86\x17\x3\x2\x2\x2\x87\x88\x5\x14\v\x2"+
+		"\x88\x8C\a\t\x2\x2\x89\x8B\x5\x1A\xE\x2\x8A\x89\x3\x2\x2\x2\x8B\x8E\x3"+
+		"\x2\x2\x2\x8C\x8A\x3\x2\x2\x2\x8C\x8D\x3\x2\x2\x2\x8D\x8F\x3\x2\x2\x2"+
+		"\x8E\x8C\x3\x2\x2\x2\x8F\x90\a\n\x2\x2\x90\x19\x3\x2\x2\x2\x91\x92\x5"+
+		"\x16\f\x2\x92\x93\x5\f\a\x2\x93\x1B\x3\x2\x2\x2\x94\x97\x5\x18\r\x2\x95"+
+		"\x97\x5\x1A\xE\x2\x96\x94\x3\x2\x2\x2\x96\x95\x3\x2\x2\x2\x97\x98\x3\x2"+
+		"\x2\x2\x98\x96\x3\x2\x2\x2\x98\x99\x3\x2\x2\x2\x99\x1D\x3\x2\x2\x2\x9A"+
+		"\x9B\x5\x1C\xF\x2\x9B\x9C\a\x2\x2\x3\x9C\x1F\x3\x2\x2\x2\x15%.\x34<?\x46"+
+		"NU^\x63mpux~\x81\x8C\x96\x98";
 	public static readonly ATN _ATN =
 		new ATNDeserializer().Deserialize(_serializedATN.ToCharArray());
 }
-} // namespace Rabotora.Core.RabotoraScriptFormat
+} // namespace Rabotora.Core.Rsf

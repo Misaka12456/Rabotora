@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\RabotoraScriptFormat\RabotoraScriptFormat.g4 by ANTLR 4.6.6
+// Generated from F:\C#\Misaka12456 (Misaka Castle)\Rabotora\Rabotora.Core\Rsf\RabotoraScriptFormat.g4 by ANTLR 4.6.6
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -19,7 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
-namespace Rabotora.Core.RabotoraScriptFormat {
+namespace Rabotora.Core.Rsf {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -30,7 +30,15 @@ using IToken = Antlr4.Runtime.IToken;
 /// </summary>
 /// <typeparam name="Result">The return type of the visit operation.</typeparam>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.6.6")]
+[System.CLSCompliant(false)]
 public interface IRabotoraScriptFormatVisitor<Result> : IParseTreeVisitor<Result> {
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="RabotoraScriptFormatParser.funcWord"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFuncWord([NotNull] RabotoraScriptFormatParser.FuncWordContext context);
+
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="RabotoraScriptFormatParser.plainString"/>.
 	/// </summary>
@@ -129,4 +137,4 @@ public interface IRabotoraScriptFormatVisitor<Result> : IParseTreeVisitor<Result
 	/// <return>The visitor result.</return>
 	Result VisitScript([NotNull] RabotoraScriptFormatParser.ScriptContext context);
 }
-} // namespace Rabotora.Core.RabotoraScriptFormat
+} // namespace Rabotora.Core.Rsf
