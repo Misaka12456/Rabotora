@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Antlr4 Remove="RabotoraScriptFormat\RabotoraScriptFormat.g4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="RabotoraScriptFormat\RabotoraScriptFormat.tokens" />
+    <None Remove="RabotoraScriptFormat\RabotoraScriptFormatLexer.tokens" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+  </ItemGroup>
+
+</Project>
