@@ -18,6 +18,7 @@
 #pragma warning disable 1591
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
+#pragma warning disable 108
 
 namespace Rabotora.Core.Rsf {
 using Antlr4.Runtime;

@@ -11,14 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Rsf\RabotoraScriptFormat.tokens" />
-    <None Remove="Rsf\RabotoraScriptFormatLexer.tokens" />
+    <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
-    <PackageReference Include="FlatSharp" Version="6.3.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <ProjectReference Include="..\Rabotora.Core\Rabotora.Core.csproj" />
   </ItemGroup>
 
 </Project>
