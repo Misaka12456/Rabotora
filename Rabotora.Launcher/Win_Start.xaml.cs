@@ -1,18 +1,16 @@
 ﻿#pragma warning disable 8618
-using Microsoft.Win32;
+#define TEST
 using Rabotora.Core;
 using Rabotora.Launcher.SubForms;
 using Rabotora.Runtime;
 using Rabotora.Runtime.Api;
 using SharpDX;
 using SharpDX.Mathematics.Interop;
+using SharpDX.MediaFoundation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
-using System.Enhance.Drawing;
-using System.Enhance.SharpDX.Direct2D;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -25,6 +23,8 @@ using D2D = SharpDX.Direct2D1;
 using DXGI = SharpDX.DXGI;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Activate2 = SharpDX.MediaFoundation.Activate;
+using System.Runtime.InteropServices;
 
 namespace Rabotora.Launcher
 {
@@ -33,22 +33,30 @@ namespace Rabotora.Launcher
 	/// </summary>
 	public partial class Win_Start : Window
 	{
+		/// <summary>
+		/// Rabotora Main Game Project.
+		/// </summary>
 		private readonly RabotoraGameProject _project = Program.MainProject;
+		/// <summary>
+		/// Entry Game Script.
+		/// </summary>
 		private readonly RabotoraScript _entryScript = Program.EntryScript;
+		/// <summary>
+		/// Executed Rabotora Direct2D Commands Linked List.
+		/// </summary>
+		private LinkedList<RabotoraD2DCmd> ExecutedCommands = new();
 
+		/// <summary>
+		/// Global Render Target.
+		/// </summary>
 		private D2D.WindowRenderTarget RenderTarget;
+
 		private bool IsStarted = false;
 		private double PreviousTop = 0;
 		private double PreviousLeft = 0;
 		private double PreviousWidth = 1280;
 		private double PreviousHeight = 720;
-		private D2D.Factory factory;
-		private D2D.HwndRenderTargetProperties hwndRenderTargetProperties;
-		private D2D.RenderTargetProperties renderTargetProperties;
-		private D2D.Device device;
-		public static bool isRestoring = false;
 		private D2D.DrawingStateBlock drawingStateBlock;
-
 #if TEST
 		private List<RabotoraD2DCmd> cmds = new();
 		private IStoppableCmd? RunningStoppableCmd = null;
@@ -138,26 +146,27 @@ namespace Rabotora.Launcher
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			factory = new D2D.Factory();
-			hwndRenderTargetProperties = new D2D.HwndRenderTargetProperties()
+			var factory = new D2D.Factory();
+			var hwndRenderTargetProperties = new D2D.HwndRenderTargetProperties()
 			{
 				Hwnd = new WindowInteropHelper(this).Handle,
 				PixelSize = new Size2((int)ActualWidth, (int)ActualHeight),
 				PresentOptions = D2D.PresentOptions.None
 			};
-			renderTargetProperties = new D2D.RenderTargetProperties(D2D.RenderTargetType.Default,
+			var renderTargetProperties = new D2D.RenderTargetProperties(D2D.RenderTargetType.Default,
 							new D2D.PixelFormat(DXGI.Format.R8G8B8A8_UNorm, D2D.AlphaMode.Premultiplied),
 							96, 96, D2D.RenderTargetUsage.None, D2D.FeatureLevel.Level_DEFAULT);
 			RenderTarget = new D2D.WindowRenderTarget(factory, renderTargetProperties, hwndRenderTargetProperties);
 			PreviousWidth = Width;
 			PreviousHeight = Height;
-			device = RenderTarget.QueryInterface<D2D.DeviceContext>().Device;
+			var device = RenderTarget.QueryInterface<D2D.DeviceContext>().Device;
 			drawingStateBlock = new(factory);
-			// If you want to test the running status, define TEST at the top of this code file, then put 2 splash image to Rabotora folder.
 #if TEST
-			cmds.Add(new BitmapFadeDrawCmd(File.ReadAllBytes(@"Rabotora\Splash-1.png"), new RawRectangleF(0, 0, 1280, 720), FadeType.FadeIn,
+			cmds.Add(new BitmapFadeDrawCmd(File.ReadAllBytes(@"C:\Users\Misaka12456\Pictures\Rabotora\Splash-1.png"), new RawRectangleF(0, 0, 1280, 720), FadeType.FadeIn,
 				new Size2F((float)ActualWidth, (float)ActualHeight)));
-			cmds.Add(new BitmapFadeDrawCmd(File.ReadAllBytes(@"Rabotora\Splash-2.png"), new RawRectangleF(0, 0, 1280, 720), FadeType.FadeIn,
+			cmds.Add(new BitmapFadeDrawCmd(File.ReadAllBytes(@"C:\Users\Misaka12456\Pictures\Rabotora\Splash-2.png"), new RawRectangleF(0, 0, 1280, 720), FadeType.FadeIn,
+				new Size2F((float)ActualWidth, (float)ActualHeight)));
+			cmds.Add(new BitmapFadeDrawCmd(File.ReadAllBytes(@"C:\Users\Misaka12456\Pictures\Rabotora\res_black.png"), new RawRectangleF(0, 0, 1280, 720), FadeType.FadeIn,
 				new Size2F((float)ActualWidth, (float)ActualHeight)));
 			Task.Run(() =>
 			{
@@ -196,7 +205,7 @@ namespace Rabotora.Launcher
 			{
 				if (!RunningStoppableCmd.IsStopDoing)
 				{
-					RunningStoppableCmd.IsStopDoing = true;
+					RunningStoppableCmd.StopCommand();
 				}
 				else
 				{
@@ -204,31 +213,6 @@ namespace Rabotora.Launcher
 				}
 			}
 		}
-
-		/* private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-		{
-			if (i < 1.0f)
-			{
-				i = 0.995f;
-				Thread.Sleep(50);
-			}
-			var ofd = new OpenFileDialog()
-			{
-				Title = "Select Picture File",
-				Filter = "PNG Picture|*.png|JPEG Picture|*.jpg|Bitmap|*.bmp"
-			};
-			bool? r = ofd.ShowDialog();
-			if (r.HasValue && r.Value)
-			{
-				var fileName = ofd.FileName; Task.Run(() =>
-				{
-					Thread.Sleep(500);
-					var bitmap = (Bitmap)Image.FromFile(fileName);
-					var stream = new MemoryStream();
-					// FadeInBitmap(RenderTarget.LoadD2DBitmapFromBitmap(bitmap));
-				});
-			}
-		} */
 
 		private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
 		{
@@ -286,6 +270,16 @@ namespace Rabotora.Launcher
 			IsStarted = false;
 		}
 
+		private void Window_Closing(object sender, CancelEventArgs e)
+		{
+			e.Cancel = true;
+			if (MessageBox.Show("Sure to quit the game?", "Please Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+			{
+				Environment.Exit(0);
+			}
+		}
+
+		/* [Obsolete("This function is deprecated due to the lag when Device Lost(we needs to restore render target). We are trying to find another way to solve the problem.")]
 		private void RestoreRenderTarget()
 		{
 			factory.ReloadSystemMetrics();
@@ -296,14 +290,6 @@ namespace Rabotora.Launcher
 			isRestoring = false;
 			Debug.Print("Good job! We successfully restored render target. Enjoy!");
 		}
-
-		private void Window_Closing(object sender, CancelEventArgs e)
-		{
-			e.Cancel = true;
-			if (MessageBox.Show("Sure to quit the game?", "Please Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-			{
-				Environment.Exit(0);
-			}
-		}
+		*/
 	}
 }

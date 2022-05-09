@@ -5,7 +5,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		mc:Ignorable="d"
 		Title="Project Rabotora Launcher" Width="1280" Height="720" Background="Black" ResizeMode="CanMinimize"
-        SizeChanged="Window_SizeChanged" Activated="Window_Activated"
-        MouseMove="Window_MouseMove" MouseDown="Window_MouseDown"
-        KeyDown="Window_KeyDown" Closing="Window_Closing">
+		SizeChanged="Window_SizeChanged" Activated="Window_Activated"
+		MouseMove="Window_MouseMove" MouseDown="Window_MouseDown"
+		KeyDown="Window_KeyDown" Closing="Window_Closing">
 </Window>

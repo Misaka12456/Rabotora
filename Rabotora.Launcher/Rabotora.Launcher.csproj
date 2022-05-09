@@ -3,18 +3,27 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
+    <AssemblyName>RabotoraStart</AssemblyName>
+    <AssemblyTitle>Rabotora Game Launcher</AssemblyTitle>
+    <Product>Rabotora Visual Novel Game Engine</Product>
+    <Company>Team Rabotora</Company>
+    <Copyright>Copyright (C) 2020-2022 Team Rabotora and Rabotora contributors. All rights reserved.</Copyright>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <Platforms>x64</Platforms>
     <UseWindowsForms>True</UseWindowsForms>
-    <Version>0.2.0</Version>
-    <AssemblyVersion>0.2.0</AssemblyVersion>
-    <FileVersion>0.2.0</FileVersion>
+    <Version>0.2.1</Version>
+    <AssemblyVersion>0.2.1</AssemblyVersion>
+    <FileVersion>0.2.1</FileVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LibVLCSharp.WPF" Version="3.6.6" />
     <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+    <PackageReference Include="SharpDX.MediaFoundation" Version="4.2.0" />
     <PackageReference Include="SkiaSharp" Version="2.80.3" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.17.4" />
   </ItemGroup>
 
   <ItemGroup>

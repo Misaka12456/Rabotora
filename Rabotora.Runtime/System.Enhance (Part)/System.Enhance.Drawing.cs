@@ -7,9 +7,9 @@ namespace System.Enhance.Drawing
     [SupportedOSPlatform("windows")]
 	public static class BitmapHelper
 	{
-        public static Bitmap ScaleBitmap(this Image bitmap, double multiply)
+        public static Bitmap ScaleBitmap(this Image bitmap, double multiple)
         {
-            Bitmap destBitmap = new Bitmap(Convert.ToInt32(bitmap.Width * multiply), Convert.ToInt32(bitmap.Height * multiply));
+            Bitmap destBitmap = new Bitmap(Convert.ToInt32(bitmap.Width * multiple), Convert.ToInt32(bitmap.Height * multiple));
             Graphics g = Graphics.FromImage(destBitmap);
             g.Clear(Color.Transparent);
             g.CompositingQuality = CompositingQuality.HighQuality;
