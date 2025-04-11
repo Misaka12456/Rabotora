@@ -1,4 +1,5 @@
 using Rabotora.Graphics;
+using NativeWindow = Rabotora.Graphics.NativeWindow;
 using Rectangle = Rabotora.Core.Rectangle;
 
 namespace MyFirstGame;

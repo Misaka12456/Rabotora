@@ -27,4 +27,13 @@
       <ProjectReference Include="..\RabotoraEngine\RabotoraEngine.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Data\Unpacked\Sprites\splash_ageWarning.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Data\Unpacked\Sprites\splash_devLogo.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

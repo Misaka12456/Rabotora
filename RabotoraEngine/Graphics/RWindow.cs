@@ -10,10 +10,14 @@ namespace Rabotora.Graphics;
 
 public class RWindow : NativeWindow
 {
-	public IRenderContext RenderContext { get; protected set; }
+	private const int MSAACount = 4;
+	private const int MSAAQuality = 0;
+	
+	public IRenderContext RenderContext { get; protected init; } = null!;
 	public ID3D11Device Device => _device ?? throw new InvalidOperationException("Device is not initialized or already disposed.");
 	public IDXGISwapChain SwapChain => _swapChain ?? throw new InvalidOperationException("SwapChain is not initialized or already disposed.");
 	public ID3D11RenderTargetView RenderTarget => _renderTarget ?? throw new InvalidOperationException("RenderTarget is not initialized or already disposed.");
+	public bool EnableAntiAliasing { get; private set; } = false;
 	
 	private readonly List<UIComponent> _components = [];
 	private ID3D11Texture2D? _renderTexture;
@@ -21,15 +25,18 @@ public class RWindow : NativeWindow
 	private ID3D11Device? _device;
 	private IDXGISwapChain? _swapChain;
 	private ID3D11RenderTargetView? _renderTarget;
+	private ID3D11Texture2D? _msaaRenderTexture; // for anti-aliasing
+	private ID3D11RenderTargetView? _msaaRenderTarget; // also for anti-aliasing
 
-	private Thread? _renderThread;
-	private volatile bool _renderThreadRunning; // 控制渲染线程运行
+	protected Thread? _renderThread;
+	protected volatile bool _renderThreadRunning; // 控制渲染线程运行
 
-	public RWindow(int width, int height, string title = "Rabotora Window")
+	public RWindow(int width, int height, string title = "Rabotora Window", bool antiAliasing = false)
 		: base(title, width, height)
 	{
 		FixedRatio = true; // 固定宽高比
 		RatioRefResolution = new Resolution(1280, 720); // 参考分辨率
+		EnableAntiAliasing = antiAliasing;
 		InitializeDirectX();
 		SetupEventHandlers();
 	}
@@ -53,7 +60,7 @@ public class RWindow : NativeWindow
 			BufferCount = 1,
 			BufferUsage = Usage.RenderTargetOutput,
 			OutputWindow = Handle,
-			SampleDescription = new SampleDescription(1, 0),
+			SampleDescription = new SampleDescription(1, 0), // always 1,0 for SwapChain
 			Windowed = true,
 			BufferDescription = new ModeDescription((uint) Width, (uint) Height, new Rational(60, 1), Format.B8G8R8A8_UNorm),
 			SwapEffect = SwapEffect.Discard
@@ -72,17 +79,56 @@ public class RWindow : NativeWindow
 		{
 			throw new InvalidOperationException("SwapChain or Device is not initialized or already disposed.");
 		}
+		
+		_renderTarget?.Dispose();
+		_msaaRenderTarget?.Dispose();
+		_msaaRenderTexture?.Dispose();
+		_renderTexture?.Dispose();
+		_textureView?.Dispose();
+		
+        
+		var sampleDesc = EnableAntiAliasing
+			? new SampleDescription(MSAACount, MSAAQuality)
+			: new SampleDescription(1, 0);
+		
 		// 获取交换链的后缓冲，并基于其创建渲染目标视图
-		using var backBuffer = _swapChain!.GetBuffer<ID3D11Texture2D>(0);
-		_renderTarget = _device!.CreateRenderTargetView(backBuffer);
+		using var backBuffer = _swapChain.GetBuffer<ID3D11Texture2D>(0);
+
+		if (EnableAntiAliasing)
+		{
+			var msaaTextureDesc = new Texture2DDescription()
+			{
+				Width = (uint) Width, Height = (uint) Height,
+				MipLevels = 1,
+				ArraySize = 1,
+				Format = Format.B8G8R8A8_UNorm,
+				SampleDescription = sampleDesc,
+				Usage = ResourceUsage.Default,
+				BindFlags = BindFlags.RenderTarget,
+				CPUAccessFlags = CpuAccessFlags.None,
+				MiscFlags = ResourceOptionFlags.None
+			};
+
+			_msaaRenderTexture = _device.CreateTexture2D(msaaTextureDesc);
+			_msaaRenderTarget = _device.CreateRenderTargetView(_msaaRenderTexture);
+
+			_renderTarget = _device.CreateRenderTargetView(backBuffer);
+		}
+		else
+		{
+			_renderTarget = _device.CreateRenderTargetView(backBuffer);
+		}
 
 		var textureDesc = new Texture2DDescription()
 		{
-			Width = (uint) Width, Height = (uint) Height,
-			MipLevels = 1, ArraySize = 1, Format = Format.B8G8R8A8_UNorm,
-			SampleDescription = new SampleDescription(1, 0),
-			Usage = ResourceUsage.Default, BindFlags = BindFlags.ShaderResource,
-			CPUAccessFlags = CpuAccessFlags.None, MiscFlags = ResourceOptionFlags.None
+			Width = (uint)Width, Height = (uint)Height,
+			Format = Format.B8G8R8A8_UNorm,
+			BindFlags = BindFlags.ShaderResource,
+			CPUAccessFlags = CpuAccessFlags.Write,
+			Usage = ResourceUsage.Dynamic,
+			MiscFlags = ResourceOptionFlags.None,
+			ArraySize = 1, MipLevels = 1,
+			SampleDescription = new SampleDescription(1, 0), // Always 1,0 for CPU accessible texture
 		};
 		_renderTexture = _device.CreateTexture2D(textureDesc);
 		_textureView = _device.CreateShaderResourceView(_renderTexture);
@@ -98,6 +144,8 @@ public class RWindow : NativeWindow
 	{
 		// 处理窗口大小变化：释放旧的RTV，调整交换链缓冲区，并重新创建RTV
 		_renderTarget?.Dispose();
+		_msaaRenderTarget?.Dispose();
+		_msaaRenderTexture?.Dispose();
 		_swapChain?.ResizeBuffers(1, (uint)Width, (uint)Height, Format.B8G8R8A8_UNorm, SwapChainFlags.None);
 		CreateRenderTarget();
 	}
@@ -107,18 +155,29 @@ public class RWindow : NativeWindow
 	/// </summary>
 	protected virtual void RenderFrame()
 	{
+		var activeRenderTarget = EnableAntiAliasing ? _msaaRenderTarget : _renderTarget;
+
+		RenderContext.SetRenderTarget(activeRenderTarget!);
 		RenderContext.BeginFrame();
 		foreach (var component in _components.Where(c => c.IsVisible))
 		{
 			component.Draw(RenderContext);
 		}
 		RenderContext.EndFrame();
+
+		// 启用抗锯齿的情况下，将MSAA纹理解析(resolve)到最终输出渲染目标(render target)
+		if (EnableAntiAliasing && _msaaRenderTexture != null)
+		{
+			var context = _device!.ImmediateContext;
+			using var backBuffer = _swapChain!.GetBuffer<ID3D11Texture2D>(0);
+			context.ResolveSubresource(_msaaRenderTexture, 0, backBuffer, 0, Format.B8G8R8A8_UNorm);
+		}
 	}
 
 	/// <summary>
 	/// 渲染线程的入口方法
 	/// </summary>
-	private void RenderLoop()
+	protected void RenderLoop()
 	{
 		var lastTime = DateTime.Now;
 		while (_renderThreadRunning && IsRunning)
@@ -156,6 +215,15 @@ public class RWindow : NativeWindow
 	
 	public void AddComponent(UIComponent component) => _components.Add(component);
 	public void RemoveComponent(UIComponent component) => _components.Remove(component);
+
+	public void SetAntiAliasing(bool enable)
+	{
+		if (EnableAntiAliasing != enable)
+		{
+			EnableAntiAliasing = enable;
+			CreateRenderTarget(); // Recreate render targets with new settings
+		}
+	}
 
 	internal virtual void RenderWithSkia(Action<SKSurface> drawAction)
 	{

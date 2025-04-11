@@ -8,7 +8,7 @@ namespace MyFirstGame;
 public class SplashComponent : AnimatedComponent
 {
 	private readonly SKBitmap[] _splashes;
-	private int _currentIndex;
+	private int _currentIndex = -1;
 
 	public SplashComponent(string[] imagePaths, Rectangle bounds)
 	{
@@ -19,7 +19,14 @@ public class SplashComponent : AnimatedComponent
 	public override void Draw(IRenderContext context)
 	{
 		if (_currentIndex >= _splashes.Length) return;
-		context.DrawTexture(_splashes[_currentIndex], Bounds, _alpha);
+		if (_currentIndex == -1)
+		{
+			var black = SKImage.Create(new SKImageInfo(Bounds.Width, Bounds.Height, SKColorType.Bgra8888, SKAlphaType.Premul));
+		}
+		else
+		{
+			context.DrawTexture(_splashes[_currentIndex], Bounds, _alpha);
+		}
 	}
 
 	public async Task PlayAnimationAsync()
