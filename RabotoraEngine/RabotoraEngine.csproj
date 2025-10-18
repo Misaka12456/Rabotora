@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UseWindowsForms>true</UseWindowsForms>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AssemblyName>RabotoraEngine</AssemblyName>
         <RootNamespace>Rabotora</RootNamespace>
         <AssemblyTitle>Rabotora Visual Novel Engine Core Library</AssemblyTitle>
@@ -16,8 +17,13 @@
 
     <ItemGroup>
       <PackageReference Include="SkiaSharp" Version="3.116.1" />
+      <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
       <PackageReference Include="Vortice.Direct2D1" Version="3.6.2" />
       <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ClCompile Include="Resources\Internal\Shaders\PixelShader.hlsl" />
     </ItemGroup>
 
 </Project>

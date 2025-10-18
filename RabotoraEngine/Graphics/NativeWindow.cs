@@ -15,8 +15,8 @@ public abstract class NativeWindow : IDisposable
 	public event Func<bool>? WindowClosing; // 关闭窗口时触发的事件，返回值决定是否取消关闭(类似winform的e.Cancel，为true就会取消关闭)
 	
 	protected IntPtr Handle { get; set; }
-	protected int Width { get; private set; }
-	protected int Height { get; private set; }
+	public int Width { get; private set; }
+	public int Height { get; private set; }
 	protected bool FixedRatio { get; set; } = false;
 	protected Resolution RatioRefResolution { get; set; } = new(1280, 720); // 参考分辨率，默认16:9 720p
 
