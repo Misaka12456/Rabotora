@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Rabotora.Launcher\Rabotora.Launcher.csproj" Type="Classic C#" />
+  <Project Path="RabotoraEngine\RabotoraEngine.csproj" Type="Classic C#" />
+</Solution>
