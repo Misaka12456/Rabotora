@@ -8,7 +8,7 @@ The Next Generation's Open-Source Visual Novel Game Engine
 ## 一起聊有关Rabotora的话题吧 / Chat some topics associated with Rabotora
 
 QQ官方讨论群 / Official QQ Discussing Group : [653640137](https://jq.qq.com/?_wv=_1027&k=PizxWl18)  
-Discord: [https://discord.gg/2Mt3NVFFUk](https://discord.gg/2Mt3NVFFUk)
+Discord: [Misaka Castle Official Server](https://discord.gg/TGQGNmg4G5)
 
 ## 开源协议 / Open-Source License
 
@@ -17,5 +17,5 @@ Licensed under [123 Open-Source Organization MIT Public License v2.0](LICENSE).
 
 ---
 
-最后更新日期: 2025.10.18
-Last Update: October 18th, 2025
+最后更新日期: 2025.11.10  
+Last Update: Nov 10th, 2025
