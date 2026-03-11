@@ -14,8 +14,11 @@ Cross-platform, fully open-source 2D/3D game engine.
 Note: RabotoraX is currently in early development stage, features are incomplete and may be unstable. Please use with caution in production and feel free to submit feedback and contribute code!</div>**
 
 ## 这是什么？ / What's this?
-RabotoraX是一个重构自原始[Rabotora](https://github.com/MisakaRehana/Rabotora)项目的，基于.NET 10和C#的2D/3D游戏引擎。  
+RabotoraX是一个重构自原始[Rabotora](https://github.com/MisakaRehana/Rabotora/tree/legacy-dev)项目的，基于.NET 10和C#的2D/3D游戏引擎。  
 架构支持不同图形API后端（如DirectX、OpenGL等），旨在为开发者提供一个现代化、易用且高性能的游戏开发平台。
+
+RabotoraX is a 2D/3D game engine built on .NET 10 and C#, refactored from the original [Rabotora](https://github.com/MisakaRehana/Rabotora/tree/legacy-dev) project.  
+It features a modular architecture with support for multiple graphics API backends (like DirectX, OpenGL, etc.) and aims to provide developers with a modern, user-friendly, and high-performance platform for game development.
 
 ## 项目结构 / Project Structure
 - [RabotoraX.Core](./RabotoraX.Core): 引擎核心库，包含渲染、物理、输入等基础功能 / Core library containing rendering, physics, input and other fundamental features.
