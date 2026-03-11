@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AssemblyTitle>RabotoraX DirectX 11 Implementation</AssemblyTitle>
+        <Company>Misaka Castle Group and RabotoraX Contributors</Company>
+        <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\RabotoraX.Core\RabotoraX.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
+      <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" />
+      <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+      <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
+      <PackageReference Include="Vortice.Mathematics" Version="2.1.0" />
+      <PackageReference Include="Vortice.Win32.Graphics.DirectWrite" Version="2.4.0" />
+    </ItemGroup>
+
+</Project>

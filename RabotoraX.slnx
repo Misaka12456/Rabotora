@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="RabotoraX.Analyzers/RabotoraX.Analyzers.csproj" />
+  <Project Path="RabotoraX.CodeFix/RabotoraX.CodeFix.csproj" />
+  <Project Path="RabotoraX.Core/RabotoraX.Core.csproj" />
+  <Project Path="RabotoraX.Interop.Direct3D11/RabotoraX.Interop.Direct3D11.csproj" />
+  <Project Path="RabotoraX.Interop.Win32/RabotoraX.Interop.Win32.csproj" />
+  <Project Path="RabotoraX.Windows.Test/RabotoraX.Windows.Test.csproj" />
+</Solution>

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AssemblyTitle>RabotoraX Win32 Interop Implementation</AssemblyTitle>
+        <Company>Misaka Castle Group and RabotoraX Contributors</Company>
+        <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\RabotoraX.Core\RabotoraX.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
+    </ItemGroup>
+
+</Project>

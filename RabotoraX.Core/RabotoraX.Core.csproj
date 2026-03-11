@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot><!-- Enable Native AOT compilation -->
+        <DefineConstants>RABOTORA_STRICT</DefineConstants>
+        <AssemblyTitle>RabotoraX Game Engine Core Library</AssemblyTitle>
+        <Company>Misaka Castle Group and RabotoraX Contributors</Company>
+        <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
+        <Version>0.3.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+        <PackageReference Include="ZLinq" Version="1.5.5" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\RabotoraX.Analyzers\RabotoraX.Analyzers.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\RabotoraX.CodeFix\RabotoraX.CodeFix.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>
