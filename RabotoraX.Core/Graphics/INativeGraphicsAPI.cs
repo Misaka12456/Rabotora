@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace RabotoraX.Core.Graphics;
@@ -57,7 +58,10 @@ public interface INativeGraphicsAPI : IDisposable
 	INative2DRenderContext? Get2DContext(); // 获取2D渲染上下文，如果当前图形API不支持则返回null
 	#endregion
 	
-	
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Direct3D11.DirectX11", "RabotoraX.Interop.Direct3D11")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Vulkan.Vulkan", "RabotoraX.Interop.Vulkan")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Metal.Metal", "RabotoraX.Interop.Metal")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.OpenGL.OpenGL", "RabotoraX.Interop.OpenGL")]
 	public static INativeGraphicsAPI PlatformDefaultCreate()
 	{
 		Type? implType;

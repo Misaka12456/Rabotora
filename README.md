@@ -35,12 +35,17 @@ It features a modular architecture with support for multiple graphics API backen
 - [ ] **OpenGL ES 3** (Android)
 - [ ] **Vulkan** (跨平台 / Cross-platform)
 
+## 构建须知 / Build Notes
+1. 核心库RabotoraX.Core依赖于Android SDK以完成针对``net*-android``目标框架的构建。请确保已安装Android SDK并正确配置``ANDROID_SDK_ROOT``环境变量(参阅[RabotoraX.Core / Directory.Build.props](./RabotoraX.Core/Directory.Build.props)中的相关注释)。  
+   The core library RabotoraX.Core relies on the Android SDK to build for ``net*-android`` target frameworks. Please ensure you have the Android SDK installed and the ``ANDROID_SDK_ROOT`` environment variable properly set (see related comments in [RabotoraX.Core / Directory.Build.props](./RabotoraX.Core/Directory.Build.props)).
 ## 开源协议 / Open-Source License
 
-根据[123 Open-Source Organization MIT Public License v2.0](LICENSE)授权  
-Licensed under [123 Open-Source Organization MIT Public License v2.0](LICENSE).
+根据[123 Open-Source Organization MIT Public License v2.0](LICENSE)授权发布。  
+一些第三方库和资源可能使用不同的许可证，请参阅各自的文档以及[许可附录](LICENSE-Appendix.txt)以获取详细信息。  
+Licensed under [123 Open-Source Organization MIT Public License v2.0](LICENSE).   
+Some third-party libraries and assets may be under different licenses, please refer to their respective documentation and the [License Appendix](LICENSE-Appendix.txt) for details.
 
 ---
 
-最后更新日期: 2026.3.12
-Last Update: Mar 12th, 2026
+最后更新日期: 2026.3.15  
+Last Update: Mar 15th, 2026

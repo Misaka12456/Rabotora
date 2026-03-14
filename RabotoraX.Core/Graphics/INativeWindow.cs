@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using RabotoraX.Core.Inputs;
 
 namespace RabotoraX.Core.Graphics;
@@ -14,7 +15,7 @@ public interface INativeWindow : IDisposable
 	
 	/// <summary>
 	/// Creates the native window with the specified width, height, title and class name.<br />
-	/// <paramref name="Handle"/>, <paramref name="IsClosing"/>, <paramref name="IsVisible"/> and <paramref name="Input"/> will be available after this method is called.
+	/// <see cref="Handle"/>, <see cref="IsClosing"/>, <see cref="IsVisible"/> and <see cref="Input"/> will be available after this method is called.
 	/// </summary>
 	/// <param name="width">The width of the window in pixels.</param>
 	/// <param name="height">The height of the window in pixels.</param>
@@ -35,6 +36,11 @@ public interface INativeWindow : IDisposable
 	event EventHandler<bool>? FocusChanged;
 	event EventHandler? Paint;
 
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Win32.RenderImpl.Win32NativeWindow", "RabotoraX.Interop.Win32")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Linux.RenderImpl.WaylandNativeWindow", "RabotoraX.Interop.Linux")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.MacOS.RenderImpl.NSNativeWindow", "RabotoraX.Interop.MacOS")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Android.RenderImpl.AndroidNativeActivity", "RabotoraX.Interop.Android")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.IOS.RenderImpl.IOSNativeView", "RabotoraX.Interop.IOS")]
 	public static INativeWindow PlatformCreate()
 	{
 		Type? implType;

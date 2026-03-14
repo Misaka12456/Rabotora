@@ -1,0 +1,8 @@
+RabotoraX License Appendix
+This is an appendix license file for RabotoraX, which includes additional licenses for third-party assets used in the project. This appendix is meant to be read in conjunction with the main RabotoraX License (123 Open-Source Organization MIT Public License v2.0).
+
+1. Kevin MacLeod's Music
+- Snicky Snitch
+"Sneaky Snitch" Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+http://creativecommons.org/licenses/by/4.0/

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using RabotoraX.Core.Audios;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Inputs;
@@ -55,6 +56,7 @@ public class Rabotora : IDisposable
 		
 		GraphicsService.Initialize(Graphics);
 		Input.Initialize(Window.Input);
+		AudioService.Initialize();
 		
 		Window.Resized += (_, size) => Graphics.Resize(size.Item1, size.Item2);
 		Window.Paint += (_, _) => RenderTickFrame();
@@ -128,6 +130,7 @@ public class Rabotora : IDisposable
 
 			OnUpdate(deltaTime);
 			Cinema.Update(deltaTime);
+			AudioService.Update();
 
 			Graphics.BeginFrame();
 			// Graphics.Clear(0, 0, 0, 1); // Clear to black by default, can be changed by user code in OnUpdate or stage updates
@@ -174,6 +177,7 @@ public class Rabotora : IDisposable
 		{
 			Cinema.PerformingStage?.Dispose();
 			Graphics.Dispose();
+			AudioService.Dispose();
 			Window.Dispose();
 		}
 		_isDisposed = true;

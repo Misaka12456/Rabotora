@@ -1,8 +1,18 @@
 <Solution>
-  <Project Path="RabotoraX.Analyzers/RabotoraX.Analyzers.csproj" />
-  <Project Path="RabotoraX.CodeFix/RabotoraX.CodeFix.csproj" />
-  <Project Path="RabotoraX.Core/RabotoraX.Core.csproj" />
-  <Project Path="RabotoraX.Interop.Direct3D11/RabotoraX.Interop.Direct3D11.csproj" />
-  <Project Path="RabotoraX.Interop.Win32/RabotoraX.Interop.Win32.csproj" />
-  <Project Path="RabotoraX.Windows.Test/RabotoraX.Windows.Test.csproj" />
+  <Folder Name="/RabotoraX Test Projects/">
+    <Project Path="RabotoraX.Windows.Test/RabotoraX.Windows.Test.csproj" />
+  </Folder>
+  <Folder Name="/RabotoraX/" />
+  <Folder Name="/RabotoraX/RabotoraX Basic Framework/">
+    <Project Path="RabotoraX.Core/RabotoraX.Core.csproj" />
+    <Project Path="RabotoraX.Interop.Direct3D11/RabotoraX.Interop.Direct3D11.csproj" />
+    <Project Path="RabotoraX.Interop.Win32/RabotoraX.Interop.Win32.csproj" />
+  </Folder>
+  <Folder Name="/RabotoraX/RabotoraX Code Analyzers/">
+    <Project Path="RabotoraX.Analyzers/RabotoraX.Analyzers.csproj" />
+    <Project Path="RabotoraX.CodeFix/RabotoraX.CodeFix.csproj" />
+  </Folder>
+  <Folder Name="/RabotoraX/RabotoraX YuukoChan VN Extension Framework/">
+    <Project Path="RabotoraX.YuukoChan/RabotoraX.YuukoChan.csproj" />
+  </Folder>
 </Solution>

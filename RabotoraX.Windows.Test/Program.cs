@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using RabotoraX.Core;
+using RabotoraX.Core.Audios;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Inputs;
 using RabotoraX.Core.Scripting;
@@ -152,13 +153,23 @@ public static class Program
 		var stage = new RStage("Act 1: Hello RabotoraX") {Type = StageType.Render3DHybrid}; // no need to do 
 		var audObj = stage.CreateObject("MainAudience");
 		audObj.Layout.Position = new Vector3(0, 0, 5);
-		var aud = audObj.AddComponent<Audience>();
+		audObj.AddComponent<Audience>();
+		audObj.AddComponent<RAudioListener>();
 		
 		var cubeObj = stage.CreateObject("RotatingCube");
 		cubeObj.Layout.Position = Vector3.Zero;
 		cubeObj.AddComponent<QuadRenderer>();
 		cubeObj.AddComponent<ColorTilt>();
 		cubeObj.AddComponent<RotatingCube>();
+		var player = cubeObj.AddComponent<RAudioPlayer>();
+		using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("RabotoraX.Windows.Test.Resources.SneakySnitch.ogg") // from Kevin MacLeod (see LICENSE-Appendix.txt for details)
+		       ?? throw new InvalidOperationException("Failed to load embedded audio resource."))
+		{
+			player.Clip = AudioClip.LoadFromStream(stream, AudioFormatType.OggVorbis);
+		}
+		player.Is3D = true;
+		player.Loop = true;
+		player.Play();
 		
 		var cubeObj2 = stage.CreateObject("StaticCube");
 		cubeObj2.Layout.Position = Vector3.Zero;

@@ -18,4 +18,9 @@
         <ProjectReference Include="..\RabotoraX.Interop.Win32\RabotoraX.Interop.Win32.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Remove="Resources\SneakySnitch.ogg" />
+        <EmbeddedResource Include="Resources\SneakySnitch.ogg" />
+    </ItemGroup>
+
 </Project>

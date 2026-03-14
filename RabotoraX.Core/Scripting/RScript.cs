@@ -32,31 +32,3 @@ public abstract class RManagedScript : RScript
 		
 	}
 }
-
-public sealed class RInterpretedScript : RScript
-{
-	public override void OnAwake()
-	{
-		
-	}
-
-	public override void OnStart()
-	{
-		
-	}
-
-	public override void OnUpdate(float deltaTime)
-	{
-		
-	}
-
-	public override void OnRender()
-	{
-		
-	}
-
-	public override void OnDestroy()
-	{
-		
-	}
-}

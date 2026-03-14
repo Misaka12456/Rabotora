@@ -1,0 +1,8 @@
+<Project>
+    <PropertyGroup>
+        <!-- Allow setting AndroidSdkDirectory from environment variable ANDROID_SDK_ROOT without set it in the project file -->
+        <AndroidSdkDirectory Condition=" '$(AndroidSdkDirectory)' == '' ">
+                $(ANDROID_SDK_ROOT)
+        </AndroidSdkDirectory>
+    </PropertyGroup>
+</Project>
