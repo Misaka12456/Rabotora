@@ -9,6 +9,8 @@ using RabotoraX.Core.Inputs;
 using RabotoraX.Core.Scripting;
 using RabotoraX.Core.Test;
 using RabotoraX.Core.UI;
+using RabotoraX.Interop.Direct3D11;
+using RabotoraX.Interop.Win32.RenderImpl;
 
 namespace RabotoraX.Windows.Test;
 
@@ -71,8 +73,10 @@ public static class Program
 	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	public static int Main(string[] args)
 	{
-		Assembly.Load("RabotoraX.Interop.Direct3D11").GetTypes();
-		Assembly.Load("RabotoraX.Interop.Win32").GetTypes();
+		// Assembly.Load("RabotoraX.Interop.Direct3D11").GetTypes();
+		// Assembly.Load("RabotoraX.Interop.Win32").GetTypes();
+		_ = typeof(DirectX11);
+		_ = typeof(Win32NativeWindow);
 		using var app = new Rabotora("Example Presentation", 1280, 720);
 		
 		return app.Run(Example3DHybridStage());

@@ -3,13 +3,18 @@
     <PropertyGroup>
         <AssemblyName>RabotoraXSampleGame</AssemblyName>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0-windows</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <TieredCompilation>false</TieredCompilation>
         <AssemblyTitle>RabotoraX Windows Sample Test Project</AssemblyTitle>
         <Company>Misaka Castle Group and RabotoraX Contributors</Company>
         <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <ImportWindowsDesktopTargets>false</ImportWindowsDesktopTargets>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0' And !'$(TargetFramework.Contains(android))'">
+        <PublishAot>true</PublishAot>
     </PropertyGroup>
 
     <ItemGroup>
