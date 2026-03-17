@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:RabotoraX.Utility.Packer.Models"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720" Width="1280" Height="720"
+        x:Class="RabotoraX.Utility.Packer.WinMain"
+        x:DataType="vm:WinMainViewModel"
+        Title="RabotoraX Data Packer">
+	<Window.Styles>
+		<Style Selector="Button.accent">
+			<Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemAccentColorTextBrush}" />
+		</Style>
+		<Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource SystemAccentColorLight1}" />
+		</Style>
+	</Window.Styles>
+	<Grid RowDefinitions="Auto, *, Auto">
+		<StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
+			<Button Command="{Binding AddFilesCommand}" Content="Add Files" />
+			<Button Command="{Binding AddFolderCommand}" Content="Add Folder" />
+			<Button Command="{Binding ClearCommand}" Content="Clear" />
+			<Separator Width="2" Height="20" Background="Gray" />
+			<CheckBox IsChecked="{Binding UseCompression}" Content="Enable LZ4 Compression" VerticalAlignment="Center" />
+			<TextBlock Text="Encryption Key (leave blank to non-encrypt):" VerticalAlignment="Center" Margin="10,0,0,0"/>
+			<TextBox Text="{Binding Encryptionkey}" Width="150" PasswordChar="*" VerticalAlignment="Center"/>
+            
+			<TextBlock Text="BlockSize:" VerticalAlignment="Center" Margin="10,0,0,0"/>
+			<ComboBox SelectedItem="{Binding BlockSize}" VerticalAlignment="Center">
+				<ComboBoxItem Content="32768" />
+				<ComboBoxItem Content="65536" />
+				<ComboBoxItem Content="131072" />
+			</ComboBox>
+
+			<Button Command="{Binding PackCommand}" Content="Execute" Classes="accent" Margin="20,0,0,0" FontWeight="Bold"/>
+		</StackPanel>
+		
+		<DataGrid Grid.Row="1" ItemsSource="{Binding Files}" AutoGenerateColumns="False" 
+		          CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserSortColumns="True"
+		          GridLinesVisibility="All" BorderThickness="1" BorderBrush="Gray" Margin="10,0,10,0">
+			<DataGrid.Columns>
+				<DataGridTextColumn Header="Logical Path (In-Pack)" Binding="{Binding LogicalPath}" Width="*" />
+				<DataGridTextColumn Header="Physical Path (Local)" Binding="{Binding PhysicalPath}" Width="*" />
+			</DataGrid.Columns>
+		</DataGrid>
+
+		<Grid Grid.Row="2" ColumnDefinitions="Auto, *" Margin="10">
+			<TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center"/>
+			<ProgressBar Grid.Column="1" Value="{Binding ProgressValue}" Maximum="100" Margin="10,0,0,0" 
+			             Height="15" IsVisible="{Binding IsPacking}"/>
+		</Grid>
+	</Grid>
+</Window>

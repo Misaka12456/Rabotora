@@ -4,6 +4,7 @@ using RabotoraX.Core.Audios;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Inputs;
+using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.Threading;
 
 namespace RabotoraX.Core;
@@ -30,6 +31,13 @@ public class Rabotora : IDisposable
 	public INativeGraphicsAPI Graphics { get; }
 	
 	/// <summary>
+	/// The fixed aspect ratio for the window, if specified. 
+	/// If this is set, the window will maintain the specified aspect ratio when resized, adding letterboxing as necessary.
+	/// If null, the window can be resized freely without maintaining a specific aspect ratio.
+	/// </summary>
+	public Fractional? FixedAspectRatio { get; }
+	
+	/// <summary>
 	/// The currently active stage being performed by the cinema. This will be null if no stage is currently active.<br />
 	/// You can set the active stage by calling <see cref="Cinema.Ready"/> with a new stage instance.
 	/// </summary>
@@ -46,10 +54,11 @@ public class Rabotora : IDisposable
 	/// <param name="title">The title of the application window.</param>
 	/// <param name="width">The initial width of the application window in pixels. Default is 1280.</param>
 	/// <param name="height">The initial height of the application window in pixels. Default is 720.</param>
-	public Rabotora(string title, int width = 1280, int height = 720)
+	public Rabotora(string title, int width = 1280, int height = 720, Fractional? fixedAspectRatio = null)
 	{
+		FixedAspectRatio = fixedAspectRatio;
 		Window = INativeWindow.PlatformCreate();
-		Window.Create(width, height, title);
+		Window.Create(width, height, title, fixedAspectRatio: fixedAspectRatio);
 
 		Graphics = INativeGraphicsAPI.PlatformDefaultCreate();
 		Graphics.Initialize(Window);
@@ -59,7 +68,16 @@ public class Rabotora : IDisposable
 		AudioService.Initialize();
 		
 		Window.Resized += (_, size) => Graphics.Resize(size.Item1, size.Item2);
-		Window.Paint += (_, _) => RenderTickFrame();
+		Window.Paint += (_, _) =>
+		{
+			if (Graphics.IsInitialized)
+			{
+				lock (Graphics.RenderLock)
+				{
+					RenderTickFrame();
+				}
+			}
+		};
 		Window.SwitchingFullScreen += (_, _) => Graphics.IgnoreAllPresents = true;
 		Window.SwitchedFullScreen += (_, _) => Graphics.IgnoreAllPresents = false;
 	}
@@ -73,7 +91,15 @@ public class Rabotora : IDisposable
 	{
 		try
 		{
+			Thread.CurrentThread.Name = "Rabotora Main (Window) Thread";
 			Cinema.Ready(initialStage);
+			
+			lock (Graphics.RenderLock)
+			{
+				_clock.Start();
+				RenderTickFrame(); // render the very first frame before showing the window to avoid unexpected white flashes.
+			}
+			
 			Window.Show();
 			// Multi-Thread Logic was introduced in RabotoraX v0.2.2 to avoid "render pause" when player dragging the window or when the window is not focused.
 			// The main thread will be responsible for handling window events and updating input state,
@@ -99,9 +125,9 @@ public class Rabotora : IDisposable
 
 	private void RenderThreadLoop()
 	{
-		_clock.Start();
 		while (!Window.IsClosing)
 		{
+			Graphics.WaitNextFrameReady();
 			MultiThreadService.ExecutePendingTasks();
 			_currentFrameWindowState = Window.GetStateSnapshot();
 			GraphicsService.Update(_currentFrameWindowState);

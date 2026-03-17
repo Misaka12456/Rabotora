@@ -1,6 +1,6 @@
 namespace RabotoraX.Core.Graphics;
 
-public interface ITexture2D : IDisposable
+public interface INativeTexture2D : IDisposable
 {
 	int Width { get; }
 	int Height { get; }

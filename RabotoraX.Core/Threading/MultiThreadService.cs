@@ -59,13 +59,21 @@ public static class MultiThreadService
 	public static void ExecutePendingTasks(long maxTicks = 20000)
 	{
 		if (!IsRenderThread) throw new InvalidOperationException("ExecutePendingTasks must be called from the render thread.");
+		if (_qTasks.IsEmpty) return;
 		_qRenderTimeout.Restart();
+		int batchCount = 0;
 		while (_qTasks.TryDequeue(out var task))
 		{
 			try
 			{
 				task.Action();
 				task.Tcs?.SetResult();
+
+				// 每处理 8 个任务才检查一次时间，显著降低 Stopwatch 开销
+				if (++batchCount % 8 == 0)
+				{
+					if (_qRenderTimeout.ElapsedTicks > maxTicks) break;
+				}
 			}
 			catch (Exception ex)
 			{

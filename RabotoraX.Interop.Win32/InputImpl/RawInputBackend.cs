@@ -1,8 +1,10 @@
+using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using RabotoraX.Core.Inputs;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 using JetBrains.Annotations;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
@@ -13,6 +15,7 @@ using static TerraFX.Interop.Windows.RI;
 namespace RabotoraX.Interop.Win32.InputImpl;
 
 [MustDisposeResource, SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
+[SupportedOSPlatform("windows")]
 public unsafe class RawInputBackend : INativeInput
 {
 	private readonly nint _hwnd;

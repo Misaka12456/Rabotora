@@ -1,9 +1,15 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
+using System.Threading;
 using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
 using RabotoraX.Core.Utility;
+using RabotoraX.Interop.Direct3D11.Rendering;
+using TerraFX.Interop.Windows;
 using Vortice.D3DCompiler;
 using Vortice.Direct2D1;
 using Vortice.Direct3D;
@@ -11,18 +17,21 @@ using Vortice.Direct3D11;
 using Vortice.DirectWrite;
 using Vortice.DXGI;
 using Vortice.Mathematics;
-using Vortice.WIC;
+using static TerraFX.Interop.Windows.Windows;
 using AlphaMode = Vortice.DCommon.AlphaMode;
+using BlendDescription = Vortice.Direct3D11.BlendDescription;
+using BlendOperation = RabotoraX.Core.Graphics.BlendOperation;
 using CullMode = RabotoraX.Core.Graphics.CullMode;
 using FeatureLevel = Vortice.Direct3D.FeatureLevel;
 using FillMode = Vortice.Direct3D11.FillMode;
 using InputElementDescription = RabotoraX.Core.Graphics.InputElementDescription;
+using IWICImagingFactory = Vortice.WIC.IWICImagingFactory;
 using PixelFormat = Vortice.DCommon.PixelFormat;
 using PrimitiveTopology = RabotoraX.Core.Graphics.PrimitiveTopology;
 
 namespace RabotoraX.Interop.Direct3D11;
 
-[UsedImplicitly]
+[UsedImplicitly, SupportedOSPlatform("windows")]
 public partial class DirectX11 : INativeGraphicsAPI
 {
 	public string ApiName => "Direct3D 11";
@@ -31,6 +40,8 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public (int Width, int Height) FramebufferSize { get; private set; }
 	public Lock RenderLock { get; } = new();
 	public bool IgnoreAllPresents { get; set; } = false;
+	
+	private readonly Stopwatch _waitTimer = Stopwatch.StartNew();
 	
 	private ID3D11Device? _device;
 	private ID3D11DeviceContext? _context;
@@ -44,7 +55,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private ID3D11RasterizerState? _rasterizerStateCullFront;
 	private ID3D11RasterizerState? _rasterizerStateCullNone;
 	private readonly Stack<CullMode> _cullModeStack = new([CullMode.Back]); // 默认是 Back Cull
-	
+	private readonly Stack<BlendState> _blendStateStack = new([BlendState.AlphaBlend]); // 默认是 Alpha Blend (Straight Alpha Blending)
+	private readonly Dictionary<BlendState, ID3D11BlendState> _blendStateCache = [];
+ 	
 	private ID3D11DepthStencilState? _depthStateDefault;
 	private ID3D11DepthStencilState? _depthStateReadOnly;
 	private ID3D11DepthStencilState? _depthStateNone;
@@ -56,6 +69,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private IDWriteFactory? _dwriteFactory;
 	private D2DContextImpl? _d2dImpl;
 	private IWICImagingFactory? _wicFactory;
+	private nint _frameWaitableObject;
 
 	private partial class D2DContextImpl : INative2DRenderContext;
 
@@ -66,6 +80,15 @@ public partial class DirectX11 : INativeGraphicsAPI
 		FramebufferSize = window.Size;
 		CreateD3D11(window);
 		CreateD2D();
+		
+		lock (RenderLock)
+		{
+			_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
+			_context!.ClearRenderTargetView(_renderTargetView!, new Color4(0, 0, 0));
+        
+			// Make window begin with black screen instead of white flashes
+			_swapChain!.Present(0, PresentFlags.None); 
+		}
 		
 		IsInitialized = true;
 	}
@@ -108,19 +131,35 @@ public partial class DirectX11 : INativeGraphicsAPI
 		using var adapter = dxgiDevice.GetAdapter();
 		using var factory = adapter.GetParent<IDXGIFactory2>();
 
-		var swapChainDesc = new SwapChainDescription()
+		var swapChainDesc = new SwapChainDescription1()
 		{
-			BufferCount = 3, // Triple buffering for better performance and smoother frame pacing. DXGI will handle the synchronization to avoid tearing.
-			BufferDescription = new ModeDescription((uint) window.Size.Width, (uint) window.Size.Height, Format.R8G8B8A8_UNorm),
-			Windowed = true,
-			OutputWindow = window.Handle,
+			Width = (uint)window.Size.Width,
+			Height = (uint)window.Size.Height,
+			Format = Format.R8G8B8A8_UNorm,
+			Stereo = false,
 			SampleDescription = new SampleDescription(1, 0),
-			SwapEffect = SwapEffect.FlipDiscard,
 			BufferUsage = Usage.RenderTargetOutput,
-			Flags = SwapChainFlags.AllowModeSwitch
+			BufferCount = 3,
+			Scaling = Scaling.Stretch,
+			SwapEffect = SwapEffect.FlipDiscard, // 必须是 Flip 模式
+			AlphaMode = Vortice.DXGI.AlphaMode.Ignore,
+			// 关键：开启内核等待对象标志，这是解决 CPU 空转的“银弹”
+			Flags = SwapChainFlags.FrameLatencyWaitableObject
 		};
 		
-		_swapChain = factory.CreateSwapChain(_device, swapChainDesc);
+		_swapChain = factory.CreateSwapChainForHwnd(_device, window.Handle, swapChainDesc);
+		
+		using var swapChain2 = _swapChain.QueryInterfaceOrNull<IDXGISwapChain2>();
+		if (swapChain2 != null)
+		{
+			swapChain2.MaximumFrameLatency = 1;
+			_frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
+		}
+		else
+		{
+			Debug.WriteLine("Warning: DXGI 1.3 Waitable Object is not supported on this system.");
+			_frameWaitableObject = nint.Zero;
+		}
 		
 		factory.MakeWindowAssociation(window.Handle, WindowAssociationFlags.IgnoreAltEnter); // Disable DXGI Default Alt+Enter FullScreen behavior
 	}
@@ -156,7 +195,6 @@ public partial class DirectX11 : INativeGraphicsAPI
 				96, 96,
 				BitmapOptions.Target | BitmapOptions.CannotDraw);
 
-			// 重建 D2D Bitmap
 			_d2dTargetBitmap = _d2dContext.CreateBitmapFromDxgiSurface(backBufferSurface, bitmapProps);
 			_d2dContext.Target = _d2dTargetBitmap;
 		}
@@ -214,6 +252,8 @@ public partial class DirectX11 : INativeGraphicsAPI
 		using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
 		_d2dDevice = _d2dFactory.CreateDevice(dxgiDevice);
 		_d2dContext = _d2dDevice.CreateDeviceContext(DeviceContextOptions.None);
+		_d2dContext.UnitMode = UnitMode.Pixels; // Use pixel units for easier integration with D3D11 render targets
+		_d2dContext.SetDpi(96, 96);
 
 		BindD2DTarget();
 
@@ -250,23 +290,49 @@ public partial class DirectX11 : INativeGraphicsAPI
 		_context?.Flush();
 	}
 
+	// DirectX11.cs
 	public void Resize(int width, int height)
 	{
-		if (IgnoreAllPresents) return;
 		lock (RenderLock)
 		{
 			if (!IsInitialized) return;
-			if (width <= 0 || height <= 0) return; // Ignore invalid sizes (e.g. when minimizing)
-		
+			if (width <= 0 || height <= 0) return;
+
 			FramebufferSize = (width, height);
-		
-			_context!.OMSetRenderTargets((ID3D11RenderTargetView?)null!); // Unbind before resizing
+        
+			// 1. 严格解绑
+			_context!.ClearState();
+			_context.Flush();
+			if (_d2dContext != null) _d2dContext.Target = null;
+
 			ReleaseResources();
-		
-			_swapChain!.ResizeBuffers(0, (uint) width, (uint) height, Format.Unknown, SwapChainFlags.None).CheckError();
-		
+        
+			// 2. 这里的 Flags 必须和 CreateSwapChain 时完全一样
+			// 既然你之前用了 FrameLatencyWaitableObject，这里必须带上
+			const SwapChainFlags resizeFlags = SwapChainFlags.FrameLatencyWaitableObject;
+        
+			var hr = _swapChain!.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags);
+			if (hr.Failure)
+			{
+				// 如果还是失败，打印错误码排查是否因为缓冲区没释放干净
+				Console.WriteLine($"ResizeBuffers Failed: {hr}");
+				return;
+			}
+        
+			// 3. 重新获取 WaitableObject (Resize 后这个句柄可能会变)
+			using var swapChain2 = _swapChain.QueryInterfaceOrNull<IDXGISwapChain2>();
+			if (swapChain2 != null)
+			{
+				_frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
+			}
+
 			CreateResources(width, height);
 		}
+	}
+
+	public IEnumerable<ShaderPlatform> GetSupportedShaderPlatforms()
+	{
+		return [ShaderPlatform.HLSL11, ShaderPlatform.HLSL2D11];
 	}
 
 	public void BeginFrame()
@@ -289,8 +355,29 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public void Present(bool vsync = true)
 	{
 		if (IgnoreAllPresents) return;
-		_context!.Flush();
+		// _context!.Flush();
 		_swapChain!.Present(vsync ? 1u : 0u, PresentFlags.None)/*.CheckError()*/; // Present 失败通常是因为窗口被最小化了，这时候不需要抛异常
+	}
+	
+	public void WaitNextFrameReady()
+	{
+		if (_frameWaitableObject != nint.Zero)
+		{
+			uint result = WaitForSingleObject((HANDLE) _frameWaitableObject, 1000);
+
+			if (_waitTimer.ElapsedMilliseconds >= 1000)
+			{
+				_waitTimer.Restart();
+			}
+			if (result != 0)
+			{
+				Thread.Yield();
+			}
+		}
+		else
+		{
+			Thread.Sleep(1);
+		}
 	}
 
 	public void WaitIdle()
@@ -365,9 +452,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 		}
 	}
 
-	public IShader CreateShader(ShaderType type, string sourceCode, string entryPoint = "main", InputElementDescription[]? inputLayout = null)
+	public INativeShader CreateNativeShader(ShaderType type, string sourceCode, string entryPoint = "main", InputElementDescription[]? inputLayout = null)
 	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateShader));
+		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateNativeShader));
 		string profile = type == ShaderType.VertexShader ? "vs_5_0" : "ps_5_0"; // We target Shader Model 5.0 for maximum compatibility with DX11 feature levels
 
 		Blob? shaderBlob = null;
@@ -400,20 +487,13 @@ public partial class DirectX11 : INativeGraphicsAPI
 						var item = inputLayout[i];
                         
 						// 格式推导
-						var format = item.FormatSize switch
-						{
-							1 => Format.R32_Float,
-							2 => Format.R32G32_Float,
-							3 => Format.R32G32B32_Float,
-							4 => Format.R32G32B32A32_Float,
-							_ => Format.R32G32B32_Float 
-						};
+						var format = item.Format;
 
 						elements[i] = new Vortice.Direct3D11.InputElementDescription(
 							item.SemanticName, 
 							(uint)item.SemanticIndex, 
-							format, 
-							(uint)item.Offset, 
+							MapFormat(format),
+							(uint)item.AlignedByteOffset, 
 							0 // Slot 0
 						);
 					}
@@ -437,11 +517,11 @@ public partial class DirectX11 : INativeGraphicsAPI
 		}
 	}
 
-	public IShader CreateShaderProgram(string vertSource, string fragSource, InputElementDescription[] inputLayout, string vertEntryPoint = "main", string fragEntryPoint = "main")
+	public INativeShader CreateNativeShaderProgram(string vertSource, string fragSource, InputElementDescription[] inputLayout, string vertEntryPoint = "main", string fragEntryPoint = "main")
 	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateShaderProgram));
-		var vertexShader = CreateShader(ShaderType.VertexShader, vertSource, vertEntryPoint, inputLayout) as DX11Shader;
-		var fragmentShader = CreateShader(ShaderType.FragmentShader, fragSource, fragEntryPoint) as DX11Shader;
+		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateNativeShaderProgram));
+		var vertexShader = CreateNativeShader(ShaderType.VertexShader, vertSource, vertEntryPoint, inputLayout) as DX11Shader;
+		var fragmentShader = CreateNativeShader(ShaderType.FragmentShader, fragSource, fragEntryPoint) as DX11Shader;
 
 		if (vertexShader == null || fragmentShader == null)
 		{
@@ -451,12 +531,80 @@ public partial class DirectX11 : INativeGraphicsAPI
 		return new DX11ShaderProgram((ID3D11VertexShader)vertexShader.NativeShader, (ID3D11PixelShader)fragmentShader.NativeShader, vertexShader.InputLayout);
 	}
 
+	public unsafe INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData)
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateTexture2D));
+
+		var desc = new Texture2DDescription()
+		{
+			Width = (uint) width,
+			Height = (uint) height,
+			MipLevels = 1,
+			ArraySize = 1,
+			Format = Format.R8G8B8A8_UNorm, // RGBA 8bit Format
+			SampleDescription = new SampleDescription(1, 0),
+			Usage = ResourceUsage.Default,
+			BindFlags = BindFlags.ShaderResource,
+			CPUAccessFlags = CpuAccessFlags.None
+		};
+
+		fixed (byte* pData = pixelData)
+		{
+			var initData = new SubresourceData(pData, (uint)width * 4);
+			var texture = _device!.CreateTexture2D(desc, new[] { initData });
+			var srv = _device!.CreateShaderResourceView(texture);
+			return new D3D11Texture2D(texture, srv, width, height);
+		}
+	}
+
+	public INativeRenderTexture CreateRenderTexture(int width, int height)
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateRenderTexture));
+
+		var desc = new Texture2DDescription()
+		{
+			Width = (uint) width,
+			Height = (uint) height,
+			MipLevels = 1,
+			ArraySize = 1,
+			Format = Format.R8G8B8A8_UNorm, // RGBA 8bit Format
+			SampleDescription = new SampleDescription(1, 0),
+			Usage = ResourceUsage.Default,
+			BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+			CPUAccessFlags = CpuAccessFlags.None
+		};
+
+		var texture = _device!.CreateTexture2D(desc);
+		var rtv = _device.CreateRenderTargetView(texture);
+		var srv = _device.CreateShaderResourceView(texture);
+		
+		return new D3D11RenderTexture(texture, rtv, srv, width, height);
+	}
+
+	public void SetRenderTarget(INativeRenderTexture? renderTarget)
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(SetRenderTarget));
+
+		if (renderTarget == null)
+		{
+			_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
+		}
+		else if (renderTarget is D3D11RenderTexture dxRT)
+		{
+			_context!.OMSetRenderTargets(dxRT.RTV, _depthStencilView);
+		}
+		else
+		{
+			throw new ArgumentException("Unsupported render target type for DX11 backend.");
+		}
+	}
+
 	public void SetViewport(float x, float y, float width, float height, float minDepth = 0, float maxDepth = 1)
 	{
 		_context!.RSSetViewport(x, y, width, height, minDepth, maxDepth);
 	}
 
-	public void SetShader(IShader shader)
+	public void SetShader(INativeShader shader)
 	{
 		MultiThreadService.ThrowIfNotRenderThread(nameof(SetShader));
 		switch (shader)
@@ -566,6 +714,62 @@ public partial class DirectX11 : INativeGraphicsAPI
 		_context!.RSSetState(state);
 	}
 
+	[MustDisposeResource]
+	public IDisposable SetBlendState(BlendState state)
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(SetBlendState));
+		
+		var lastState = _blendStateStack.Peek();
+		if (lastState.Equals(state)) return new AutoScope(); // No change needed
+		
+		if (_blendStateStack.Count >= 32)
+		{
+			Debug.Assert(false, "History Blend States Count >= 32: too many nested SetBlendState calls without ResumeBlendState. Has any code logic causing circular Blend State changes?");
+		}
+		
+		_blendStateStack.Push(state);
+		ApplyBlendState(state);
+		
+		return new AutoScope(onExit: ResumeBlendState);
+	}
+
+	public void ResumeBlendState()
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(ResumeBlendState));
+		if (_blendStateStack.Count <= 1) return;
+		_blendStateStack.Pop(); // ignore the popped value because we will peek the new current state
+		ApplyBlendState(_blendStateStack.Peek());
+	}
+
+	private void ApplyBlendState(BlendState state)
+	{
+		if (!_blendStateCache.TryGetValue(state, out var nativeState))
+		{
+			var desc = new BlendDescription()
+			{
+				AlphaToCoverageEnable = false,
+				IndependentBlendEnable = false
+			};
+
+			desc.RenderTarget[0] = new RenderTargetBlendDescription()
+			{
+				BlendEnable = state.EnableBlending,
+				SourceBlend = MapBlend(state.SrcColor),
+				DestinationBlend = MapBlend(state.DstColor),
+				BlendOperation = MapOp(state.ColorOp),
+				SourceBlendAlpha = MapBlend(state.SrcAlpha),
+				DestinationBlendAlpha = MapBlend(state.DstAlpha),
+				BlendOperationAlpha = MapOp(state.AlphaOp),
+				RenderTargetWriteMask = ColorWriteEnable.All
+			};
+			
+			nativeState = _device!.CreateBlendState(desc);
+			_blendStateCache[state] = nativeState;
+		}
+
+		_context!.OMSetBlendState(nativeState);
+	}
+
 	public void SetDepthEnabled(bool enabled, bool writeEnabled = true)
 	{
 		MultiThreadService.ThrowIfNotRenderThread(nameof(SetDepthEnabled));
@@ -635,6 +839,43 @@ public partial class DirectX11 : INativeGraphicsAPI
 			PrimitiveTopology.LineList => Vortice.Direct3D.PrimitiveTopology.LineList,
 			PrimitiveTopology.PointList => Vortice.Direct3D.PrimitiveTopology.PointList,
 			_ => Vortice.Direct3D.PrimitiveTopology.TriangleList
+		};
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static Vortice.Direct3D11.Blend MapBlend(BlendFactor factor)
+	{
+		return factor switch
+		{
+			BlendFactor.Zero => Vortice.Direct3D11.Blend.Zero,
+			BlendFactor.One => Vortice.Direct3D11.Blend.One,
+			BlendFactor.SrcColor => Vortice.Direct3D11.Blend.SourceColor,
+			BlendFactor.OneMinusSrcColor => Vortice.Direct3D11.Blend.InverseSourceColor,
+			BlendFactor.SrcAlpha => Vortice.Direct3D11.Blend.SourceAlpha,
+			BlendFactor.OneMinusSrcAlpha => Vortice.Direct3D11.Blend.InverseSourceAlpha,
+			BlendFactor.DstAlpha => Vortice.Direct3D11.Blend.DestinationAlpha,
+			BlendFactor.OneMinusDstAlpha => Vortice.Direct3D11.Blend.InverseDestinationAlpha,
+			BlendFactor.DstColor => Vortice.Direct3D11.Blend.DestinationColor,
+			BlendFactor.OneMinusDstColor => Vortice.Direct3D11.Blend.InverseDestinationColor,
+			BlendFactor.SrcAlphaSaturate => Vortice.Direct3D11.Blend.SourceAlphaSaturate,
+			BlendFactor.ConstantColor => Vortice.Direct3D11.Blend.BlendFactor,
+			BlendFactor.OneMinusConstantColor => Vortice.Direct3D11.Blend.InverseBlendFactor,
+			BlendFactor.OneMinusConstantAlpha => Vortice.Direct3D11.Blend.InverseBlendFactor,
+			_ => Vortice.Direct3D11.Blend.One
+		};
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static Vortice.Direct3D11.BlendOperation MapOp(BlendOperation op)
+	{
+		return op switch
+		{
+			BlendOperation.Add => Vortice.Direct3D11.BlendOperation.Add,
+			BlendOperation.Subtract => Vortice.Direct3D11.BlendOperation.Subtract,
+			BlendOperation.ReverseSubtract => Vortice.Direct3D11.BlendOperation.ReverseSubtract,
+			BlendOperation.Min => Vortice.Direct3D11.BlendOperation.Min,
+			BlendOperation.Max => Vortice.Direct3D11.BlendOperation.Max,
+			_ => Vortice.Direct3D11.BlendOperation.Add
 		};
 	}
 }

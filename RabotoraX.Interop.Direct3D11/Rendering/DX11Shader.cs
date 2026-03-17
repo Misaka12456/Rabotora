@@ -3,7 +3,7 @@ using Vortice.Direct3D11;
 
 namespace RabotoraX.Interop.Direct3D11;
 
-internal class DX11Shader : IShader
+internal class DX11Shader : INativeShader
 {
 	public ID3D11DeviceChild NativeShader { get; } // VertexShader or PixelShader
 	public ID3D11InputLayout? InputLayout { get; } // 仅 VertexShader 需要

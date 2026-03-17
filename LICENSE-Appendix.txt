@@ -6,3 +6,11 @@ This is an appendix license file for RabotoraX, which includes additional licens
 "Sneaky Snitch" Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0 License
 http://creativecommons.org/licenses/by/4.0/
+
+2. BIZ UDPGothic Font
+Copyright 2022 The BIZ UDGothic Project Authors (https://github.com/googlefonts/morisawa-biz-ud-mincho)
+Designed by Type Bank Co. and Morisawa Inc.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is available with a FAQ at:
+https://openfontlicense.org

@@ -16,6 +16,14 @@ public static class GraphicsService
 	
 	public static void Update(WindowStateSnapshot snapshot)
 	{
+		if (LatestWindowState.Width != snapshot.Width || LatestWindowState.Height != snapshot.Height)
+		{
+			if (API is {IsInitialized: true})
+			{
+				// 这一步会触发 DirectX11.cs 里的 ResizeBuffers
+				API.Resize(snapshot.Width, snapshot.Height);
+			}
+		}
 		LatestWindowState = snapshot;
 	}
 }

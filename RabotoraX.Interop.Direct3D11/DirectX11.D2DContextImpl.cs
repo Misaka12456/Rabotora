@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Interop.Direct3D11.Rendering;
@@ -7,18 +10,20 @@ using Vortice.DirectWrite;
 using Vortice.Mathematics;
 using Vortice.WIC;
 using BitmapInterpolationMode = Vortice.Direct2D1.BitmapInterpolationMode;
+using RRect = RabotoraX.Core.Mathematics.Rect;
 
 namespace RabotoraX.Interop.Direct3D11;
 
 public partial class DirectX11
 {
+	
 	private partial class D2DContextImpl
 	{
 		private readonly DirectX11 _parent;
 		private readonly Dictionary<Color4, ID2D1SolidColorBrush> _brushCache = new();
 		private readonly Dictionary<(string font, float size), IDWriteTextFormat> _formatCache = new();
 		private ID2D1DeviceContext D2DContext => _parent._d2dContext!;
-		
+		private INativeShader? _currentShader;
 		
 		public D2DContextImpl(DirectX11 parent)
 		{
@@ -27,6 +32,8 @@ public partial class DirectX11
 
 		public void BeginDraw()
 		{
+			D2DContext.Transform = Matrix3x2.Identity;
+			D2DContext.SetDpi(96, 96); // Set DPI to default (96) because we have already calculated the sizes in RUILayout
 			D2DContext.BeginDraw();
 		}
 
@@ -54,12 +61,31 @@ public partial class DirectX11
 			D2DContext.FillRectangle(rect, brush);
 		}
 
-		public void DrawImage(ITexture2D texture, float x, float y, float width, float height, float opacity = 1)
+		public void DrawImage(INativeTexture2D texture, float x, float y, float width, float height, float opacity = 1)
 		{
-			if (texture is D2DTexture d2dTex)
+			// if (texture is not D2DTexture d2dTex) return;
+			var nativeTex = texture is Texture2D managedTex ? managedTex.NativeTexture : texture;
+			if (nativeTex is not D2DTexture d2dTex) return;
+			var descRect = new Rect(x, y, width, height); 
+			D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+		}
+
+		public void DrawImage(INativeTexture2D texture, RRect sourceRect, float x, float y, float width, float height, float opacity = 1)
+		{
+			var nativeTex = texture is Texture2D managedTex ? managedTex.NativeTexture : texture;
+			if (nativeTex is not D2DTexture d2dTex) return;
+			var destRect = new Rect(x, y, width, height); 
+			var srcRect = new RawRectF(sourceRect.X, sourceRect.Y, sourceRect.X + sourceRect.Width, sourceRect.Y + sourceRect.Height);
+
+			if (_currentShader is DX11CombinedShader { D2DEffectId: not null } combined)
 			{
-				var descRect = new Rect(x, y, x + width, y + height);
-				D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+				var effect = _parent.GetEffectInstance(combined.D2DEffectId.Value);
+				using var image = effect.QueryInterface<ID2D1Image>();
+				D2DContext.DrawImage(image, new Vector2(x, y), srcRect, InterpolationMode.Linear, CompositeMode.SourceOver);
+			}
+			else
+			{
+				D2DContext.DrawBitmap(d2dTex.Bitmap, destRect, opacity, BitmapInterpolationMode.Linear, srcRect);
 			}
 		}
 
@@ -75,7 +101,12 @@ public partial class DirectX11
 			D2DContext.Transform = matrix;
 		}
 
-		public ITexture2D CreateTexture(string path)
+		public void SetShader(INativeShader? shader)
+		{
+			_currentShader = shader;
+		}
+
+		public INativeTexture2D CreateTexture(string path)
 		{
 			if (!File.Exists(path))
 			{
@@ -95,13 +126,13 @@ public partial class DirectX11
 			return new D2DTexture(bitmap);
 		}
 
-		public ITexture2D CreateTexture(byte[] data)
+		public INativeTexture2D CreateTexture(byte[] data)
 		{
 			var stream = new MemoryStream(data);
 			return CreateTexture(stream, leaveOpen: false);
 		}
 
-		public ITexture2D CreateTexture(Stream stream, bool leaveOpen = false)
+		public INativeTexture2D CreateTexture(Stream stream, bool leaveOpen = false)
 		{
 			try
 			{
@@ -111,7 +142,8 @@ public partial class DirectX11
 				
 				converter.Initialize(frame, PixelFormat.Format32bppPBGRA);
 
-				var bitmap = D2DContext.CreateBitmapFromWicBitmap(converter);
+				var bitmap = D2DContext.CreateBitmapFromWicBitmap(converter, new BitmapProperties(
+					new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
 				return new D2DTexture(bitmap);
 			}
 			finally

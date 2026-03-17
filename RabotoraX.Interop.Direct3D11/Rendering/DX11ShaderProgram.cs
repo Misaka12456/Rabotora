@@ -1,9 +1,10 @@
+using System;
 using RabotoraX.Core.Graphics;
 using Vortice.Direct3D11;
 
 namespace RabotoraX.Interop.Direct3D11;
 
-public class DX11ShaderProgram : IShader
+public class DX11ShaderProgram : INativeShader
 {
 	public ID3D11VertexShader? VertexShader { get; }
 	public ID3D11PixelShader? FragmentShader { get; }

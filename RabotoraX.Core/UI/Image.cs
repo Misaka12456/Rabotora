@@ -1,41 +1,32 @@
-using System.Numerics;
 using RabotoraX.Core.Graphics;
 
 namespace RabotoraX.Core.UI;
 
-/// <summary>
-/// Represents an image component that can be rendered in a 2D UI stage.
-/// </summary>
 public class Image : Component2D
 {
-	public string ImagePath { get; set; } = string.Empty;
+	public Sprite? Sprite { get; set; }
 	public float Opacity { get; set; } = 1.0f;
-
-	private ITexture2D? _texture;
-	private string? _lastLoadedPath;
+	public INativeShader? CustomShader { get; set; }
 
 	public override void OnRender2D(INative2DRenderContext context)
 	{
-		if (string.IsNullOrEmpty(ImagePath)) return;
-
-		if (_texture == null || _lastLoadedPath != ImagePath)
-		{
-			_texture?.Dispose();
-			_texture = context.CreateTexture(ImagePath);
-			_lastLoadedPath = ImagePath;
-		}
-
+		if (Sprite?.Texture == null) return;
+		
 		context.SetTransform(GetCanvasWorldMatrix());
+		
+		if (CustomShader != null)
+		{
+			context.SetShader(CustomShader);
+		}
 
 		if (Layout is RUILayout uiLayout)
 		{
-			context.DrawImage(_texture, 0, 0, uiLayout.Size.X, uiLayout.Size.Y, Opacity);
+			context.DrawImage(Sprite.NativeTexture, Sprite.SourceRect, 0, 0, uiLayout.Size.X, uiLayout.Size.Y, Opacity);
 		}
-	}
-
-	protected override void Dispose(bool disposing)
-	{
-		if (disposing) _texture?.Dispose();
-		base.Dispose(disposing);
+		
+		if (CustomShader != null)
+		{
+			context.SetShader(null); // Reset shader after drawing
+		}
 	}
 }

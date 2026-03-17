@@ -12,6 +12,9 @@
     <Project Path="RabotoraX.Analyzers/RabotoraX.Analyzers.csproj" />
     <Project Path="RabotoraX.CodeFix/RabotoraX.CodeFix.csproj" />
   </Folder>
+  <Folder Name="/RabotoraX/RabotoraX Utility/">
+    <Project Path="RabotoraX.Utility.Packer/RabotoraX.Utility.Packer.csproj" />
+  </Folder>
   <Folder Name="/RabotoraX/RabotoraX YuukoChan VN Extension Framework/">
     <Project Path="RabotoraX.YuukoChan/RabotoraX.YuukoChan.csproj" />
   </Folder>

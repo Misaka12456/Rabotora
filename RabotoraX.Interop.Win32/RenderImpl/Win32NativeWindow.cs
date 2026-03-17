@@ -1,14 +1,18 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Inputs;
+using RabotoraX.Core.Mathematics;
 using RabotoraX.Interop.Win32.InputImpl;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
 using static TerraFX.Interop.Windows.CS;
 using static TerraFX.Interop.Windows.WM;
+using static TerraFX.Interop.Windows.WMSZ;
 using static TerraFX.Interop.Windows.WS;
+using static TerraFX.Interop.Windows.SC;
 using static TerraFX.Interop.Windows.SW;
 using static TerraFX.Interop.Windows.GWLP;
 using static TerraFX.Interop.Windows.GWL;
@@ -21,11 +25,13 @@ namespace RabotoraX.Interop.Win32.RenderImpl;
 public unsafe class Win32NativeWindow : INativeWindow
 {
 	public nint Handle => _hwnd;
+
 	public string Title
 	{
 		get => GetTitle();
 		set => SetTitle(value);
 	}
+
 	public (int Width, int Height) Size { get; set; }
 
 	public bool IsClosing { get; private set; }
@@ -40,20 +46,22 @@ public unsafe class Win32NativeWindow : INativeWindow
 	public event EventHandler<bool>? FocusChanged;
 	public event EventHandler? Paint;
 
-	private readonly Lock _lockSnapshot = new();
 	private HWND _hwnd;
 	private string _className = "RabotoraXWindowClass";
 	private GCHandle _this;
 	private WindowStateSnapshot _latestSnapshot;
 	private RawInputBackend? _input;
 	private bool _isFullScreen;
-	private WINDOWPLACEMENT _prevPlacement = new() { length = (uint)sizeof(WINDOWPLACEMENT) };
+	private WINDOWPLACEMENT _prevPlacement = new() {length = (uint) sizeof(WINDOWPLACEMENT)};
+	private Fractional? _fixedAspectRatio;
 	private bool _isDisposed;
 
-	public void Create(int width, int height, string title, string? className = "RabotoraXWindowClass")
+	public void Create(int width, int height, string title, string? className = "RabotoraXWindowClass", Fractional? fixedAspectRatio = null)
 	{
 		ObjectDisposedException.ThrowIf(_isDisposed, this);
+		InitializeDpiAwareness();
 		Size = (width, height);
+		_fixedAspectRatio = fixedAspectRatio;
 		_latestSnapshot = new WindowStateSnapshot();
 		(_latestSnapshot.Width, _latestSnapshot.Height) = Size;
 		GraphicsService.Update(_latestSnapshot);
@@ -61,7 +69,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 		{
 			_className = className;
 		}
-		
+
 		fixed (char* classPtr = _className)
 		fixed (char* titlePtr = title)
 		{
@@ -81,16 +89,35 @@ public unsafe class Win32NativeWindow : INativeWindow
 			{
 				throw new Win32Exception(Marshal.GetLastWin32Error(), "RegisterClassExW failed");
 			}
-			
-			_hwnd = CreateWindowExW(0, classPtr, titlePtr, WS.WS_OVERLAPPEDWINDOW,
-				CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+
+			var rect = new RECT() {left = 0, top = 0, right = width, bottom = height};
+			if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393)) // Windows 10 1607 Anniversary Update
+			{
+				AdjustWindowRectExForDpi(&rect, WS_OVERLAPPEDWINDOW, false, 0, USER_DEFAULT_SCREEN_DPI);
+			}
+			else
+			{
+				AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, false, 0);
+			}
+
+			int actualWidth = rect.right - rect.left;
+			int actualHeight = rect.bottom - rect.top;
+
+			uint style = WS_OVERLAPPEDWINDOW;
+			if (fixedAspectRatio.HasValue)
+			{
+				style &= ~(uint) WS_MAXIMIZEBOX; // Disable maximize to avoid aspect ratio breaking. Users can still use Alt+Enter to toggle full screen mode, which does not break the aspect ratio.
+			}
+
+			_hwnd = CreateWindowExW(0, classPtr, titlePtr, style,
+				CW_USEDEFAULT, CW_USEDEFAULT, actualWidth, actualHeight,
 				HWND.NULL, HMENU.NULL, wc.hInstance, null);
-			
+
 			if (_hwnd == HWND.NULL)
 			{
 				throw new Win32Exception("CreateWindowExW failed");
 			}
-			
+
 			_this = GCHandle.Alloc(this);
 			SetWindowLongPtrW(_hwnd, GWLP_USERDATA, GCHandle.ToIntPtr(_this));
 			_input = new RawInputBackend(_hwnd);
@@ -98,10 +125,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 
 		FocusChanged += (sender, focus) =>
 		{
-			lock (_lockSnapshot)
-			{
-				_latestSnapshot.IsFocused = focus;
-			}
+			_latestSnapshot.IsFocused = focus;
 			GraphicsService.Update(_latestSnapshot);
 		};
 	}
@@ -112,10 +136,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 		ShowWindow(_hwnd, SW_SHOW);
 		UpdateWindow(_hwnd);
 		IsVisible = true;
-		lock (_lockSnapshot)
-		{
-			_latestSnapshot.IsVisible = true;
-		}
+		_latestSnapshot.IsVisible = true;
 		GraphicsService.Update(_latestSnapshot);
 	}
 
@@ -124,10 +145,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 		ObjectDisposedException.ThrowIf(_isDisposed, this);
 		ShowWindow(_hwnd, SW_HIDE);
 		IsVisible = false;
-		lock (_lockSnapshot)
-		{
-			_latestSnapshot.IsVisible = false;
-		}
+		_latestSnapshot.IsVisible = false;
 		GraphicsService.Update(_latestSnapshot);
 	}
 
@@ -142,67 +160,87 @@ public unsafe class Win32NativeWindow : INativeWindow
 	{
 		MSG msg;
 
-		while (PeekMessageW(&msg, HWND.NULL, 0, 0, PM.PM_REMOVE) != 0)
+		int bRet = GetMessageW(&msg, HWND.NULL, 0, 0); // GetMessage is blocked, so that the CPU usage will be significantly reduced
+		if (bRet > 0)
 		{
-			if (msg.message == WM_QUIT)
-			{
-				IsClosing = true;
-				break;
-			}
-			
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+		}
+		else if (bRet == 0) // WM_QUIT received
+		{
+			IsClosing = true;
+		}
+		else
+		{
+#if DEBUG
+			System.Diagnostics.Debug.WriteLine($"GetMessageW failed with error code {Marshal.GetLastWin32Error()}");
+#endif
+			IsClosing = true;
 		}
 	}
 
 	public WindowStateSnapshot GetStateSnapshot()
 	{
-		lock (_lockSnapshot)
-		{
-			return _latestSnapshot;
-		}
+		return _latestSnapshot;
 	}
 
 	public void ToggleFullScreen()
 	{
 		SwitchingFullScreen?.Invoke(this, EventArgs.Empty);
-		var style = (nuint)GetWindowLongPtrW(_hwnd, GWL_STYLE);
-		if (!_isFullScreen)
+		lock (GraphicsService.API.RenderLock)
 		{
-			fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
-			{
-				GetWindowPlacement(_hwnd, pPrev);
-			}
-			
-			var hMonitor = MonitorFromWindow(_hwnd, MONITOR_DEFAULTTONEAREST);
-			var mi = new MONITORINFO() { cbSize = (uint)sizeof(MONITORINFO) };
-			GetMonitorInfoW(hMonitor, &mi);
-			
-			// WS_OVERLAPPEDWINDOW = WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
-			SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint)(style & ~(nuint)WS_OVERLAPPEDWINDOW));
-			
-			SetWindowPos(_hwnd, HWND.HWND_TOP, 
-				mi.rcMonitor.left, mi.rcMonitor.top,
-				mi.rcMonitor.right - mi.rcMonitor.left,
-				mi.rcMonitor.bottom - mi.rcMonitor.top,
-				SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-			SwitchedFullScreen?.Invoke(this, EventArgs.Empty);
-			
-			_isFullScreen = true;
-		}
-		else
-		{
-			SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint)(style | WS_OVERLAPPEDWINDOW));
-			fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
-			{
-				SetWindowPlacement(_hwnd, pPrev);
-			}
-			SetWindowPos(_hwnd, HWND.NULL, 0, 0, 0, 0,
-				SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-			SwitchedFullScreen?.Invoke(this, EventArgs.Empty);
+			var style = (nuint) GetWindowLongPtrW(_hwnd, GWL_STYLE);
 
-			_isFullScreen = false;
+			if (!_isFullScreen)
+			{
+				fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
+				{
+					GetWindowPlacement(_hwnd, pPrev);
+				}
+
+				var hMonitor = MonitorFromWindow(_hwnd, MONITOR_DEFAULTTONEAREST);
+				var mi = new MONITORINFO() {cbSize = (uint) sizeof(MONITORINFO)};
+				GetMonitorInfoW(hMonitor, &mi);
+
+				SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint)(style & ~(nuint)WS_OVERLAPPEDWINDOW));
+
+				SetWindowPos(_hwnd, HWND.HWND_TOP, 
+					mi.rcMonitor.left, mi.rcMonitor.top,
+					mi.rcMonitor.right - mi.rcMonitor.left,
+					mi.rcMonitor.bottom - mi.rcMonitor.top,
+					SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+				RECT rect;
+				GetClientRect(_hwnd, &rect);
+				_latestSnapshot.Width = rect.right - rect.left;
+				_latestSnapshot.Height = rect.bottom - rect.top;
+
+				_isFullScreen = true;
+			}
+			else
+			{
+				uint normalStyle = (uint) (style | WS_OVERLAPPEDWINDOW);
+				if (_fixedAspectRatio.HasValue) normalStyle &= ~(uint) WS_MAXIMIZEBOX;
+
+				SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint) normalStyle);
+				fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
+				{
+					SetWindowPlacement(_hwnd, pPrev);
+				}
+
+				RECT rect;
+				GetClientRect(_hwnd, &rect);
+				_latestSnapshot.Width = rect.right - rect.left;
+				_latestSnapshot.Height = rect.bottom - rect.top;
+
+				_isFullScreen = false;
+			}
+
+			GraphicsService.Update(_latestSnapshot);
 		}
+		InvalidateRect(_hwnd, null, false);
+		UpdateWindow(_hwnd);
+		SwitchedFullScreen?.Invoke(this, EventArgs.Empty);
 	}
 
 	private string GetTitle()
@@ -236,7 +274,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 			case WM_CLOSE:
 				DestroyWindow(hWnd);
 				return 0;
-			
+
 			case WM_DESTROY:
 				SetWindowLongPtrW(hWnd, GWLP_USERDATA, 0); // clear userdata to avoid 0xc0000005 (Access Freed Memory) especially in Debug Mode
 				PostQuitMessage(0);
@@ -244,19 +282,76 @@ public unsafe class Win32NativeWindow : INativeWindow
 
 			case WM_SIZE:
 			{
-				int width = LOWORD(lParam);
-				int height = HIWORD(lParam);
-				if (managed?._lockSnapshot != null)
+				if (managed != null)
 				{
-					lock (managed._lockSnapshot)
+					int width = LOWORD(lParam);
+					int height = HIWORD(lParam);
+					if (managed._latestSnapshot.Width != width || managed._latestSnapshot.Height != height)
 					{
 						managed._latestSnapshot.Width = width;
 						managed._latestSnapshot.Height = height;
+						GraphicsService.Update(managed._latestSnapshot);
+						managed.Resized?.Invoke(managed, (width, height));
 					}
 				}
 
-				managed?.Resized?.Invoke(managed, (width, height));
 				return 0;
+			}
+
+			case WM_SIZING:
+			{
+				if (managed != null && managed._fixedAspectRatio.HasValue)
+				{
+					var ratio = (double) managed._fixedAspectRatio.Value.Numerator / managed._fixedAspectRatio.Value.Denominator;
+					var rect = (RECT*) lParam;
+
+					var adjRect = new RECT();
+					uint style = (uint) GetWindowLongPtrW(hWnd, GWL_STYLE);
+					uint exStyle = (uint) GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+					AdjustWindowRectEx(&adjRect, style, false, exStyle);
+
+					int borderWidth = (adjRect.right - adjRect.left);
+					int borderHeight = (adjRect.bottom - adjRect.top);
+
+					int totalWidth = rect->right - rect->left;
+					int totalHeight = rect->bottom - rect->top;
+
+					switch ((int) wParam)
+					{
+						case WMSZ_LEFT:
+						case WMSZ_RIGHT:
+							int targetClientHeight = (int) ((totalWidth - borderWidth) / ratio);
+							rect->bottom = rect->top + targetClientHeight + borderHeight;
+							break;
+
+						case WMSZ_TOP:
+						case WMSZ_BOTTOM:
+							int targetClientWidth = (int) ((totalHeight - borderHeight) * ratio);
+							rect->right = rect->left + targetClientWidth + borderWidth;
+							break;
+
+						default:
+							int clientHeightFromWidth = (int) ((totalWidth - borderWidth) / ratio);
+							rect->bottom = rect->top + clientHeightFromWidth + borderHeight;
+							break;
+					}
+				}
+
+				return 1; // Return non-zero to prevent the system from resizing the window, since we have already adjusted the size in place.
+			}
+
+			case WM_SYSCOMMAND:
+			{
+				ulong command = wParam & 0xFFF0;
+				if (managed != null && managed._fixedAspectRatio.HasValue)
+				{
+					if (command == SC_MAXIMIZE && !managed._isFullScreen)
+					{
+						return 0; // Block the maximize command to prevent aspect ratio breaking. Full screen toggle will bypass SC_MAXIMIZE and will work fine.
+					}
+				}
+
+				break;
 			}
 
 			case WM_SETFOCUS:
@@ -264,7 +359,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 				managed?.FocusChanged?.Invoke(managed, true);
 				break;
 			}
-			
+
 			case WM_KILLFOCUS:
 			{
 				managed?.FocusChanged?.Invoke(managed, false);
@@ -277,15 +372,16 @@ public unsafe class Win32NativeWindow : INativeWindow
 				{
 					PAINTSTRUCT ps;
 					BeginPaint(hWnd, &ps);
-					
+
 					managed.Paint.Invoke(managed, EventArgs.Empty);
-					
+
 					EndPaint(hWnd, &ps);
 				}
 				else
 				{
 					return DefWindowProcW(hWnd, msg, wParam, lParam);
 				}
+
 				return 0;
 			}
 			case WM_SYSKEYDOWN:
@@ -295,12 +391,13 @@ public unsafe class Win32NativeWindow : INativeWindow
 					managed?.ToggleFullScreen();
 					return 0;
 				}
+
 				break;
 			}
 			case WM_ERASEBKGND:
 				return 1; // Indicate that we handled background erasing to prevent flickering. The game will handle clearing the background itself.
 		}
-		
+
 		return DefWindowProcW(hWnd, msg, wParam, lParam);
 	}
 
@@ -318,7 +415,7 @@ public unsafe class Win32NativeWindow : INativeWindow
 		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
-	
+
 	protected virtual void Dispose(bool disposing)
 	{
 		if (_isDisposed) return;
@@ -331,18 +428,35 @@ public unsafe class Win32NativeWindow : INativeWindow
 				_this.Free();
 			}
 		}
-			
+
 		if (_hwnd != HWND.NULL)
 		{
 			DestroyWindow(_hwnd);
 			_hwnd = HWND.NULL;
 		}
-			
+
 		_isDisposed = true;
 	}
-	
+
 	~Win32NativeWindow()
 	{
 		Dispose(false);
+	}
+
+	private static void InitializeDpiAwareness()
+	{
+		if (!OperatingSystem.IsWindows()) return;
+		if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 15063))
+		{
+			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+		}
+		else if (OperatingSystem.IsWindowsVersionAtLeast(8, 1))
+		{
+			SetProcessDpiAwareness(PROCESS_DPI_AWARENESS.PROCESS_PER_MONITOR_DPI_AWARE);
+		}
+		else
+		{
+			SetProcessDPIAware();
+		}
 	}
 }

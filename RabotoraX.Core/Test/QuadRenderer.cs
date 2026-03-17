@@ -28,8 +28,8 @@ public class QuadRenderer : Component
     private IGpuBuffer? _constantBuffer;
     
     // 修复：必须分开保存 VS 和 PS
-    private IShader? _vertexShader;
-    private IShader? _pixelShader;
+    private INativeShader? _vertexShader;
+    private INativeShader? _pixelShader;
 
     private const string ShaderCode = @"
         cbuffer MVPBuffer : register(b0) {
@@ -84,13 +84,13 @@ public class QuadRenderer : Component
 
         var layout = new InputElementDescription[]
         {
-            new("POSITION", 0, 3, 0),
-            new("COLOR", 0, 4, 12)
+            new("POSITION", 0, GpuFormat.R32G32B32_Float, 0, 0),
+            new("COLOR", 0, GpuFormat.R32G32B32A32_Float, 12, 0)
         };
         
         // 修复：同时编译并创建 Vertex Shader 和 Pixel Shader
-        _vertexShader = api.CreateShader(ShaderType.VertexShader, ShaderCode, "VSMain", layout);
-        _pixelShader = api.CreateShader(ShaderType.FragmentShader, ShaderCode, "PSMain");
+        _vertexShader = api.CreateNativeShader(ShaderType.VertexShader, ShaderCode, "VSMain", layout);
+        _pixelShader = api.CreateNativeShader(ShaderType.FragmentShader, ShaderCode, "PSMain");
     }
 
     public override void OnRender()

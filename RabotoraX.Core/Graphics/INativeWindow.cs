@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using RabotoraX.Core.Inputs;
+using RabotoraX.Core.Mathematics;
 
 namespace RabotoraX.Core.Graphics;
 
@@ -21,7 +22,7 @@ public interface INativeWindow : IDisposable
 	/// <param name="height">The height of the window in pixels.</param>
 	/// <param name="title">The title of the window.</param>
 	/// <param name="className">The class name of the window. This is only used on Windows and can be left as the default value for other platforms.</param>
-	void Create(int width, int height, string title, string? className = "RabotoraXWindowClass");
+	void Create(int width, int height, string title, string? className = "RabotoraXWindowClass", Fractional? fixedAspectRatio = null);
 	void DoEvents();
 	void Show();
 	void Hide();

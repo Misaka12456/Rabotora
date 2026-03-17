@@ -3,7 +3,7 @@
     <PropertyGroup>
         <AssemblyName>RabotoraXSampleGame</AssemblyName>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyTitle>RabotoraX Windows Sample Test Project</AssemblyTitle>
@@ -25,7 +25,12 @@
 
     <ItemGroup>
         <None Remove="Resources\SneakySnitch.ogg" />
-        <EmbeddedResource Include="Resources\SneakySnitch.ogg" />
+        <None Update="Resources\Demo2D_Data.pkg">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Resources\Demo3D_Data.pkg">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>
