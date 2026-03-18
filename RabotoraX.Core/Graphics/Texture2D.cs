@@ -12,6 +12,48 @@ public class Texture2D : Object
 	public bool IsLoaded => _nativeTexture != null;
 	
 	public INativeTexture2D NativeTexture => _nativeTexture ?? throw new InvalidOperationException("Texture not loaded yet.");
+	
+	public void CreateEmpty(int width, int height, byte r = 255, byte g = 255, byte b = 255, byte a = 255)
+	{
+		DisposeNativeTexture();
+        
+		byte[] data = new byte[width * height * 4];
+		for (int i = 0; i < data.Length; i += 4)
+		{
+			data[i] = r;
+			data[i + 1] = g;
+			data[i + 2] = b;
+			data[i + 3] = a;
+		}
+
+		_nativeTexture = GraphicsService.API.CreateTexture2D(width, height, data);
+	}
+	
+	public void CreateEmpty2D(int width, int height, byte r = 255, byte g = 255, byte b = 255, byte a = 255)
+	{
+		DisposeNativeTexture();
+        
+		var context2D = GraphicsService.API.Get2DContext() 
+		                ?? throw new InvalidOperationException("No 2D context available.");
+
+		if (!GraphicsService.API.ApiName.StartsWith("Direct"))
+		{
+			CreateEmpty(width, height, r, g, b, a);
+			return;
+		}
+
+		byte[] data = new byte[width * height * 4];
+		for (int i = 0; i < data.Length; i += 4)
+		{
+			data[i] = b;
+			data[i + 1] = g;
+			data[i + 2] = r;
+			data[i + 3] = a;
+		}
+
+		using var ms = new MemoryStream(data);
+		_nativeTexture = context2D.CreateTexture(ms);
+	}
 
 	public void LoadImage(byte[] data)
 	{

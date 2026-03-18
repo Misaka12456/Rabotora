@@ -580,6 +580,30 @@ public partial class DirectX11 : INativeGraphicsAPI
 		
 		return new D3D11RenderTexture(texture, rtv, srv, width, height);
 	}
+	
+	public void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData)
+	{
+		uint rowPitch = (uint)(texture.Width * 4);
+
+		unsafe
+		{
+			fixed (void* pData = pixelData)
+			{
+				if (texture is D3D11Texture2D d3dTex)
+				{
+					_context!.UpdateSubresource(d3dTex.Texture, 0u, null, (nint)pData, rowPitch, 0u);
+				}
+				else if (texture is D3D11RenderTexture d3dRT)
+				{
+					_context!.UpdateSubresource(d3dRT.Texture, 0u, null, (nint)pData, rowPitch, 0u);
+				}
+				else if (texture is D2DTexture d2dTex)
+				{
+					d2dTex.Bitmap.CopyFromMemory((nint)pData, rowPitch);
+				}
+			}
+		}
+	}
 
 	public void SetRenderTarget(INativeRenderTexture? renderTarget)
 	{

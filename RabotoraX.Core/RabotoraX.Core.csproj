@@ -13,7 +13,7 @@
         <AssemblyTitle>RabotoraX Game Engine Core Library</AssemblyTitle>
         <Company>Misaka Castle Group and RabotoraX Contributors</Company>
         <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
-        <Version>0.5.0</Version>
+        <Version>0.5.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AndroidSdkDirectory>$(AndroidSdkDirectory)</AndroidSdkDirectory>
     </PropertyGroup>

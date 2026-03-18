@@ -12,6 +12,7 @@ public interface INative2DRenderContext : IDisposable
 	INativeTexture2D CreateTexture(string path);
 	INativeTexture2D CreateTexture(byte[] data);
 	INativeTexture2D CreateTexture(Stream stream, bool leaveOpen = false);
+	INativeTexture2D CreateEmptyTexture(int width, int height);
 
 	void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a, float strokeWidth);
 	void FillRectangle(float x, float y, float width, float height, float r, float g, float b, float a);

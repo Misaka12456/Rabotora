@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
+      <PackageReference Include="Vortice.MediaFoundation" Version="3.8.3" />
     </ItemGroup>
 
 </Project>

@@ -154,6 +154,15 @@ public partial class DirectX11
 				}
 			}
 		}
+
+		public INativeTexture2D CreateEmptyTexture(int width, int height)
+		{
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied);
+			var props = new BitmapProperties(pixelFormat);
+    
+			var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), props);
+			return new D2DTexture(bitmap);
+		}
 		
 		private ID2D1SolidColorBrush GetCachedBrush(float r, float g, float b, float a)
 		{
@@ -166,7 +175,6 @@ public partial class DirectX11
 			return brush;
 		}
 
-		// 统一获取 TextFormat 的逻辑 (重点优化)
 		private IDWriteTextFormat GetCachedFormat(string fontName, float fontSize)
 		{
 			var key = (fontName, fontSize);

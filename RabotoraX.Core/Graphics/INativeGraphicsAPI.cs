@@ -42,6 +42,7 @@ public interface INativeGraphicsAPI : IDisposable
 	#region 纹理与渲染目标
 	INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData);
 	INativeRenderTexture CreateRenderTexture(int width, int height);
+	void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData);
 	
 	void SetRenderTarget(INativeRenderTexture? renderTexture); // 设置当前渲染目标，传入null表示切换回默认帧缓冲
 	#endregion
