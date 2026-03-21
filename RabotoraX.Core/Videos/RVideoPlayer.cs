@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using RabotoraX.Core.Audios;
 using RabotoraX.Core.Graphics;
@@ -8,16 +9,22 @@ namespace RabotoraX.Core.Videos;
 public class RVideoPlayer : Component2D
 {
 	private const int BufferCount = 12;
+	private const int VideoQueueMaxCacheCount = 45;
 
 	public VideoClip? Clip { get; set; }
 	public Texture2D? Texture { get; private set; }
 	public bool IsPlaying => !_isPaused;
+	public TimeSpan Time => TimeSpan.FromSeconds(_audioClock);
+	public TimeSpan Length => Clip != null ? TimeSpan.FromSeconds(Clip.Duration) : TimeSpan.Zero;
+	public VideoRenderColorType ColorType { get; set; } = VideoRenderColorType.FollowSystem;
 
 	private IVideoDecoder? _decoder;
 	private uint _alSource;
 	private readonly Queue<uint> _alBuffers = new();
 	private readonly ConcurrentQueue<VideoFrame> _videoQueue = new();
 	private readonly ConcurrentQueue<AudioFrame> _audioQueue = new();
+	private readonly ArrayPool<byte> _pixelPool = ArrayPool<byte>.Shared;
+	private readonly AutoResetEvent _frameNeededSignal = new(false);
 
 	private Thread? _decodeThread;
 	private volatile bool _running;
@@ -41,10 +48,10 @@ public class RVideoPlayer : Component2D
 	{
 		if (Clip == null || _decoder == null) return;
 
-		_decoder.Initialize(Clip);
+		_decoder.Initialize(Clip, ColorType);
 
 		Texture = new Texture2D();
-		Texture.CreateEmpty2D(Clip.Width, Clip.Height);
+		Texture.CreateEmpty2DForVideo(Clip.Width, Clip.Height);
 
 		StartDecodeThread();
 	}
@@ -107,6 +114,7 @@ public class RVideoPlayer : Component2D
 		_decodeThread = new Thread(DecodeThreadLoop)
 		{
 			Name = "RabotoraX RUI VideoPlayer Decode Thread",
+			Priority = ThreadPriority.Highest,
 			IsBackground = true
 		};
 
@@ -118,11 +126,32 @@ public class RVideoPlayer : Component2D
 		while (_running)
 		{
 			if (_decoder == null) continue;
+			bool worked = false;
 
 			// Video Queue
-			if (_videoQueue.Count < 30 && _decoder.TryReadNextVideoFrame(out var pixels, out double vPts))
+			// if (_videoQueue.Count < VideoQueueMaxCacheCount && _decoder.TryReadNextVideoFrame(out var pixels, out int stride, out double vPts))
+			// {
+			// 	_videoQueue.Enqueue(new VideoFrame {Pixels = pixels.ToArray(), Stride = stride, Pts = vPts});
+			// }
+			if (_videoQueue.Count < VideoQueueMaxCacheCount)
 			{
-				_videoQueue.Enqueue(new VideoFrame {Pixels = pixels.ToArray(), Pts = vPts});
+				int frameSize = Clip!.Height * _decoder.Stride;
+				byte[] buffer = _pixelPool.Rent(frameSize);
+				
+				if (_decoder.TryReadNextVideoFrame(buffer, out int stride, out double vPts))
+				{
+					_videoQueue.Enqueue(new VideoFrame {Pixels = buffer, Stride = stride, Pts = vPts});
+				}
+				else
+				{
+					_pixelPool.Return(buffer);
+					Thread.Sleep(5);
+				}
+				worked = true;
+			}
+			else
+			{
+				_frameNeededSignal.WaitOne(5);
 			}
 
 			// Audio Queue
@@ -136,9 +165,13 @@ public class RVideoPlayer : Component2D
 					BitDepth = a.BitDepth,
 					Pts = a.Pts
 				});
+				worked = true;
 			}
 
-			Thread.Sleep(1);
+			if (!worked)
+			{
+				Thread.Yield();
+			}
 		}
 	}
 
@@ -207,8 +240,17 @@ public class RVideoPlayer : Component2D
 
 		while (_videoQueue.TryPeek(out var frame))
 		{
-			if (frame.Pts > masterTime)
-				break;
+			if (frame.Pts > masterTime + 0.005) break;
+
+			if (hasFrame && frameToRender.Pixels != null)
+			{
+				_pixelPool.Return(frameToRender.Pixels);
+			}
+
+			if (_videoQueue.Count < VideoQueueMaxCacheCount / 2)
+			{
+				_frameNeededSignal.Set();
+			}
 
 			_videoQueue.TryDequeue(out frameToRender);
 			hasFrame = true;
@@ -216,15 +258,22 @@ public class RVideoPlayer : Component2D
 
 		if (hasFrame && frameToRender.Pixels != null)
 		{
-			UpdateRenderTexturePixels(frameToRender.Pixels);
+			try 
+			{
+				UpdateRenderTexturePixels(frameToRender);
+			}
+			finally 
+			{
+				_pixelPool.Return(frameToRender.Pixels);
+			}
 		}
 	}
 
-	private void UpdateRenderTexturePixels(byte[] pixels)
+	private void UpdateRenderTexturePixels(VideoFrame frame)
 	{
 		if (Texture == null) return;
 
-		GraphicsService.API.UpdateTexture2D(Texture.NativeTexture, pixels);
+		GraphicsService.API.UpdateTexture2D(Texture.NativeTexture, frame.Pixels, frame.Stride);
 	}
 
 	private double GetMasterTime(float deltaTime)
@@ -243,8 +292,12 @@ public class RVideoPlayer : Component2D
 
 	private void ClearQueues()
 	{
-		while (_videoQueue.TryDequeue(out _))
+		while (_videoQueue.TryDequeue(out var frame))
 		{
+			if (frame.Pixels != null)
+			{
+				_pixelPool.Return(frame.Pixels);
+			}
 		}
 
 		while (_audioQueue.TryDequeue(out _))

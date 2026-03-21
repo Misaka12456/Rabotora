@@ -12,7 +12,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -28,3 +28,11 @@ jobs:
         run: dotnet build --no-restore
       - name: Test
         run: dotnet test --no-build --verbosity normal
+      - name: Native AOT Publish Test (with Artifacts)
+        run: dotnet publish "RabotoraX.Windows.Test\RabotoraX.Windows.Test.csproj" -c Release -r win-x64 -f net10.0
+      - name: Upload Native AOT Publish Test Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: NativeAOTPublishTest
+          path: RabotoraX.Windows.Test/bin/Release/net*/win-x64/publish/
+          if-no-files-found: error

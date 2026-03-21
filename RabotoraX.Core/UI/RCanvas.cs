@@ -33,6 +33,11 @@ public sealed class RCanvas : Component2D
 	
 	private Vector2 _lastScreenSize = Vector2.Zero;
 
+	public override void OnStart()
+	{
+		
+	}
+
 	public override void OnUpdate(float deltaTime)
 	{
 		var currentScreenSize = new Vector2(GraphicsService.LatestWindowState.Width, GraphicsService.LatestWindowState.Height);

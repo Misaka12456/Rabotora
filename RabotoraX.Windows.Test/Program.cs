@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.Versioning;
 using RabotoraX.Core;
 using RabotoraX.Core.Audios;
 using RabotoraX.Core.Cinematics;
@@ -8,22 +9,21 @@ using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.Resources;
 using RabotoraX.Core.Test;
 using RabotoraX.Core.UI;
+using RabotoraX.Core.Videos;
 using RabotoraX.Windows.Test.Demo2D;
 using RabotoraX.Windows.Test.Demo3D;
+using TerraFX.Interop.Windows;
+using static TerraFX.Interop.Windows.Windows;
 
 namespace RabotoraX.Windows.Test;
 
+[SupportedOSPlatform("windows")]
 public static class Program
 {
 	[STAThread]
 	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	public static int Main(string[] args)
 	{
-		// Assembly.Load("RabotoraX.Interop.Direct3D11").GetTypes();
-		// Assembly.Load("RabotoraX.Interop.Win32").GetTypes();
-		// _ = typeof(DirectX11); // use direct reference to ensure the assembly is loaded
-		// _ = typeof(Win32NativeWindow);
-		// Just let [DynamicDependency] do its job in INativeWindow.PlatformCreate() and IGraphicsAPI.PlatformDefaultCreate() to also ensure Native AOT compatibility.
 		using var app = new Rabotora("Example Presentation", 1280, 720, new Fractional(16, 9));
 
 		return app.Run(Example2DGoLiveStage());
@@ -187,6 +187,52 @@ public static class Program
 		image.IsEnabled = false;
 		imageObj.AddComponent<ImageTilt>();
 
+		return stage;
+	}
+
+	private static RStage Example2DGoLiveStage2()
+	{
+		var stage = new RStage("Splash") {Type = StageType.Render2D, ClearColor = new(0, 0, 0, 1)};
+
+		var canvasObj = stage.CreateObject("Canvas");
+		var canvas = canvasObj.AddComponent<RCanvas>();
+		canvas.ReferenceResolution = new Vector2(1280, 720);
+		canvas.ScaleMode = CanvasScaleMode.ScaleWithScreenSize;
+		canvas.MatchMode = ScreenMatchMode.MatchWidthOrHeight;
+		canvas.MatchWidthOrHeight = 0.5f;
+		canvasObj.AddComponent<RAudioListener>();
+
+		var imageObj = stage.CreateObject("SplashVideo");
+		var image = imageObj.AddComponent<RawImage>();
+		var imgLayout = (RUILayout) image.Layout;
+		imgLayout.SetParent(canvas.Layout);
+		
+		imgLayout.AnchorMin = Vector2.Zero;
+		imgLayout.AnchorMax = Vector2.One;
+		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
+		image.Opacity = 1;
+		var clip = new VideoClip(new FileStream(@"<YOUR_VIDEO_FILE_PATH_HERE>", FileMode.Open, FileAccess.Read)); // no need to set VideoFormatType bec. underlying decoder (e.g. Media Foundation) will auto-detect it
+		var player = imageObj.AddComponent<RVideoPlayer>();
+		player.Clip = clip;
+		player.Prepare();
+		image.Texture = player.Texture; // assign the player's texture to the RawImage
+		var vtp = imageObj.AddComponent<VideoTexturePlayer>();
+		
+		var statusTextObj = stage.CreateObject("StatusText");
+		var statusText = statusTextObj.AddComponent<Text>();
+		var statusLayout = (RUILayout) statusText.Layout;
+		statusLayout.SetParent(canvas.Layout);
+		
+		statusLayout.AnchorMin = statusLayout.AnchorMax = new Vector2(0, 0); // Top-left corner
+		statusLayout.Pivot = new Vector2(0, 0); // Set pivot to top-left for easier positioning
+		statusLayout.AnchoredPosition = new Vector2(10, 10); // 10 pixels from the top-left corner
+		statusLayout.Size = new Vector2(400, 50); // Set a fixed size for the status text
+		statusText.Color = new Vector4(0, 0, 0, 1); // Black text
+		statusText.FontName = "Microsoft YaHei UI";
+		statusText.FontSize = 18;
+		statusText.Content = "Idle";
+		vtp._statusText = statusText; // pass the reference to VideoTexturePlayer for status updates
+		
 		return stage;
 	}
 }

@@ -15,6 +15,7 @@ public class RStage : Object
 	/// This value will not be used if the active stage is <see cref="StageType.Render3D"/> stage; instead, they will be cleared by the <see cref="Audience" />.
 	/// </summary>
 	public Vector4 ClearColor { get; set; } = new Vector4(0, 0, 0, 1); // black
+	public IReadOnlyList<RObject> RootObjects => _rootObjects;
 	private readonly List<RObject> _rootObjects = [];
 
 	public RStage(string name)

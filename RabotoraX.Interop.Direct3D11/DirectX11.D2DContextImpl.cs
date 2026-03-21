@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using RabotoraX.Core.Graphics;
+using RabotoraX.Core.UI;
 using RabotoraX.Interop.Direct3D11.Rendering;
 using Vortice;
 using Vortice.Direct2D1;
@@ -96,6 +97,13 @@ public partial class DirectX11
 			D2DContext.DrawText(text, format, new Rect(x, y, 10000, 10000), brush);
 		}
 
+		public void DrawTextLayout(INativeTextLayout layout, float x, float y, float r, float g, float b, float a)
+		{
+			if (layout is not D2DTextLayout d2dLayout) return;
+			var brush = GetCachedBrush(r, g, b, a);
+			D2DContext.DrawTextLayout(new Vector2(x, y), d2dLayout.InternalLayout, brush, DrawTextOptions.None);
+		}
+
 		public void SetTransform(Matrix3x2 matrix)
 		{
 			D2DContext.Transform = matrix;
@@ -104,32 +112,6 @@ public partial class DirectX11
 		public void SetShader(INativeShader? shader)
 		{
 			_currentShader = shader;
-		}
-
-		public INativeTexture2D CreateTexture(string path)
-		{
-			if (!File.Exists(path))
-			{
-				throw new FileNotFoundException($"Texture file not found: {path}");
-			}
-			
-			using var decoder = _parent._wicFactory!.CreateDecoderFromFileName(path);
-			using var frame = decoder.GetFrame(0);
-			
-			using var converter = _parent._wicFactory.CreateFormatConverter();
-			
-			converter.Initialize(frame, PixelFormat.Format32bppPBGRA);
-			
-			var bitmap = D2DContext.CreateBitmapFromWicBitmap(converter, new BitmapProperties(
-				new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
-			
-			return new D2DTexture(bitmap);
-		}
-
-		public INativeTexture2D CreateTexture(byte[] data)
-		{
-			var stream = new MemoryStream(data);
-			return CreateTexture(stream, leaveOpen: false);
 		}
 
 		public INativeTexture2D CreateTexture(Stream stream, bool leaveOpen = false)
@@ -155,6 +137,41 @@ public partial class DirectX11
 			}
 		}
 
+		public unsafe INativeTexture2D CreateTexture(int width, int height, ReadOnlyMemory<byte> pixelData)
+		{
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied);
+			int pitch = width * 4; // Assuming 4 bytes per pixel (BGRA)
+			
+			var props = new BitmapProperties(pixelFormat);
+			fixed (byte* pData = pixelData.Span)
+			{
+				var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), (nint)pData, (uint)pitch, props);
+				return new D2DTexture(bitmap);
+			}
+		}
+
+		public unsafe INativeTexture2D CreateVideoTexture(int width, int height, ReadOnlyMemory<byte>? initialData = null)
+		{
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Ignore);
+			int pitch = width * 4; // Assuming 4 bytes per pixel (BGRA)
+			
+			var props = new BitmapProperties(pixelFormat);
+			if (initialData.HasValue)
+			{
+				var data = initialData.Value;
+				fixed (byte* pData = data.Span)
+				{
+					var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), (nint)pData, (uint)pitch, props);
+					return new D2DTexture(bitmap);
+				}
+			}
+			else
+			{
+				var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), props);
+				return new D2DTexture(bitmap);
+			}
+		}
+
 		public INativeTexture2D CreateEmptyTexture(int width, int height)
 		{
 			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied);
@@ -163,7 +180,14 @@ public partial class DirectX11
 			var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), props);
 			return new D2DTexture(bitmap);
 		}
-		
+
+		public INativeTextLayout CreateTextLayout(string text, string fontName, float fontSize, float maxWidth = float.MaxValue, float maxHeight = float.MaxValue)
+		{
+			var format = GetCachedFormat(fontName, fontSize);
+			var layout = _parent._dwriteFactory!.CreateTextLayout(text, format, maxWidth, maxHeight);
+			return new D2DTextLayout(layout);
+		}
+
 		private ID2D1SolidColorBrush GetCachedBrush(float r, float g, float b, float a)
 		{
 			var color = new Color4(r, g, b, a);

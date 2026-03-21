@@ -5,10 +5,11 @@ public interface IVideoDecoder : IDisposable
 	bool HasAudio { get; }
 	
 	bool IsReady { get; }
+	int Stride { get; }
 	
-	void Initialize(VideoClip clip);
+	void Initialize(VideoClip clip, VideoRenderColorType colorType = VideoRenderColorType.FollowSystem);
 	
-	bool TryReadNextVideoFrame(out ReadOnlySpan<byte> frameData, out double timestamp);
+	bool TryReadNextVideoFrame(byte[] frameData, out int stride, out double timestamp);
 	bool TryReadNextAudioBlock(out AudioData audioData);
 	void Seek(double time);
 

@@ -7,6 +7,8 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PublishAot>false</PublishAot>
+        <PublishTrimmed>false</PublishTrimmed>
     </PropertyGroup>
 
     <ItemGroup>

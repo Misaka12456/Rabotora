@@ -68,6 +68,25 @@ public sealed class RObject : Object
 	{
 		return _components.OfType<T>().FirstOrDefault();
 	}
+	
+	public T? GetComponentInChildren<T>() where T : Component
+	{
+		foreach (var component in _components)
+		{
+			if (component is T tComponent)
+			{
+				return tComponent;
+			}
+		}
+		
+		foreach (var child in Layout.Children)
+		{
+			var result = child.RObject.GetComponentInChildren<T>();
+			if (result != null) return result;
+		}
+		
+		return null;
+	}
 
 	internal void Update(float deltaTime)
 	{

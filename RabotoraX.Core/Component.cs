@@ -25,5 +25,10 @@ namespace RabotoraX.Core
 		{
 			return RObject.GetComponent<T>();
 		}
+		
+		public T? GetComponentInChildren<T>() where T : Component
+		{
+			return RObject.GetComponentInChildren<T>();
+		}
 	}
 }

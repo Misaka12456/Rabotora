@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<!--suppress MsbuildTargetFrameworkTagInspection -->
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <AllPlatforms>net10.0;net10.0-android;net10.0-ios</AllPlatforms>
-        <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('osx'))">net10.0;net10.0-android</TargetFrameworks>
-        <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx'))">$(AllPlatforms)</TargetFrameworks>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(TargetPlatform)' == 'android'">net10.0;net10.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(TargetPlatform)' == 'ios'">$(AllPlatforms)</TargetFrameworks>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -13,7 +14,7 @@
         <AssemblyTitle>RabotoraX Game Engine Core Library</AssemblyTitle>
         <Company>Misaka Castle Group and RabotoraX Contributors</Company>
         <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
-        <Version>0.5.1</Version>
+        <Version>0.5.2</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AndroidSdkDirectory>$(AndroidSdkDirectory)</AndroidSdkDirectory>
     </PropertyGroup>

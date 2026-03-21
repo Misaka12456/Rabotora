@@ -187,55 +187,53 @@ public unsafe class Win32NativeWindow : INativeWindow
 	public void ToggleFullScreen()
 	{
 		SwitchingFullScreen?.Invoke(this, EventArgs.Empty);
+
+		var style = (nuint)GetWindowLongPtrW(_hwnd, GWL_STYLE);
+		uint newStyle;
+		RECT targetRect;
+    
+		if (!_isFullScreen)
+		{
+			fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement) GetWindowPlacement(_hwnd, pPrev);
+			var hMonitor = MonitorFromWindow(_hwnd, MONITOR_DEFAULTTONEAREST);
+			var mi = new MONITORINFO() { cbSize = (uint)sizeof(MONITORINFO) };
+			GetMonitorInfoW(hMonitor, &mi);
+        
+			newStyle = (uint)(style & ~(nuint)WS_OVERLAPPEDWINDOW);
+			targetRect = mi.rcMonitor;
+		}
+		else
+		{
+			newStyle = (uint)(style | WS_OVERLAPPEDWINDOW);
+			if (_fixedAspectRatio.HasValue) newStyle &= ~(uint)WS_MAXIMIZEBOX;
+			targetRect = _prevPlacement.rcNormalPosition;
+		}
+
+		SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint)newStyle);
+    
+		if (!_isFullScreen)
+		{
+			SetWindowPos(_hwnd, HWND.HWND_TOP, 
+				targetRect.left, targetRect.top,
+				targetRect.right - targetRect.left,
+				targetRect.bottom - targetRect.top,
+				SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+			_isFullScreen = true;
+		}
+		else
+		{
+			// 恢复窗口模式
+			fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement) SetWindowPlacement(_hwnd, pPrev);
+			_isFullScreen = false;
+		}
+
+		// 3. 只有在更新状态快照时才加锁，确保渲染线程看到的是一致的尺寸
 		lock (GraphicsService.API.RenderLock)
 		{
-			var style = (nuint) GetWindowLongPtrW(_hwnd, GWL_STYLE);
-
-			if (!_isFullScreen)
-			{
-				fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
-				{
-					GetWindowPlacement(_hwnd, pPrev);
-				}
-
-				var hMonitor = MonitorFromWindow(_hwnd, MONITOR_DEFAULTTONEAREST);
-				var mi = new MONITORINFO() {cbSize = (uint) sizeof(MONITORINFO)};
-				GetMonitorInfoW(hMonitor, &mi);
-
-				SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint)(style & ~(nuint)WS_OVERLAPPEDWINDOW));
-
-				SetWindowPos(_hwnd, HWND.HWND_TOP, 
-					mi.rcMonitor.left, mi.rcMonitor.top,
-					mi.rcMonitor.right - mi.rcMonitor.left,
-					mi.rcMonitor.bottom - mi.rcMonitor.top,
-					SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-
-				RECT rect;
-				GetClientRect(_hwnd, &rect);
-				_latestSnapshot.Width = rect.right - rect.left;
-				_latestSnapshot.Height = rect.bottom - rect.top;
-
-				_isFullScreen = true;
-			}
-			else
-			{
-				uint normalStyle = (uint) (style | WS_OVERLAPPEDWINDOW);
-				if (_fixedAspectRatio.HasValue) normalStyle &= ~(uint) WS_MAXIMIZEBOX;
-
-				SetWindowLongPtrW(_hwnd, GWL_STYLE, (nint) normalStyle);
-				fixed (WINDOWPLACEMENT* pPrev = &_prevPlacement)
-				{
-					SetWindowPlacement(_hwnd, pPrev);
-				}
-
-				RECT rect;
-				GetClientRect(_hwnd, &rect);
-				_latestSnapshot.Width = rect.right - rect.left;
-				_latestSnapshot.Height = rect.bottom - rect.top;
-
-				_isFullScreen = false;
-			}
-
+			RECT rect;
+			GetClientRect(_hwnd, &rect);
+			_latestSnapshot.Width = rect.right - rect.left;
+			_latestSnapshot.Height = rect.bottom - rect.top;
 			GraphicsService.Update(_latestSnapshot);
 		}
 		InvalidateRect(_hwnd, null, false);

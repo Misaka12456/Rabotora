@@ -42,7 +42,7 @@ public interface INativeGraphicsAPI : IDisposable
 	#region 纹理与渲染目标
 	INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData);
 	INativeRenderTexture CreateRenderTexture(int width, int height);
-	void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData);
+	void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0);
 	
 	void SetRenderTarget(INativeRenderTexture? renderTexture); // 设置当前渲染目标，传入null表示切换回默认帧缓冲
 	#endregion
@@ -74,7 +74,7 @@ public interface INativeGraphicsAPI : IDisposable
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Vulkan.Vulkan", "RabotoraX.Interop.Vulkan")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Metal.Metal", "RabotoraX.Interop.Metal")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.OpenGL.OpenGL", "RabotoraX.Interop.OpenGL")]
-	public static INativeGraphicsAPI PlatformDefaultCreate()
+	public static INativeGraphicsAPI PlatformDefaultCreate(Rabotora main)
 	{
 		Type? implType;
 		try
@@ -96,6 +96,6 @@ public interface INativeGraphicsAPI : IDisposable
 			throw new NotImplementedException("This functionality is not implemented in the portable version of this assembly. " +
 			                                  "You should reference the NuGet package from your main application project in order to reference the platform-specific implementation.");
 		}
-		return (INativeGraphicsAPI)Activator.CreateInstance(implType)!;
+		return (INativeGraphicsAPI)Activator.CreateInstance(implType, main) ?? throw new InvalidOperationException("Failed to create instance of the platform-specific graphics API implementation.");
 	}
 }

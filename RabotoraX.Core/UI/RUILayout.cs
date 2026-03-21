@@ -4,10 +4,12 @@ using RabotoraX.Core.Mathematics;
 
 namespace RabotoraX.Core.UI;
 
+/// <summary>
+/// Represents a layout component that can be used to position and size UI elements in a 2D (or 3D Hybrid) stage.<br />
+/// The coordinate system used by <see cref="RUILayout"/> is directly Screen Space coordinates, but it will be transformed to the local Cartesian coordinate system for the basic <see cref="RLayout"/> functionality.
+/// </summary>
 public sealed class RUILayout : RLayout
 {
-    // === 底层笛卡尔属性 (左下角为0, Y轴向上) ===
-    
     public Vector2 Pivot
     {
         get;
@@ -74,7 +76,7 @@ public sealed class RUILayout : RLayout
             OffsetMin -= delta * Pivot;
             OffsetMax += delta * (Vector2.One - Pivot);
             
-            _isDirty = true;
+            Recalculate();
         }
     }
 
@@ -90,7 +92,7 @@ public sealed class RUILayout : RLayout
             OffsetMin += delta;
             OffsetMax += delta;
             
-            _isDirty = true;
+            Recalculate();
         }
     }
 
@@ -105,47 +107,70 @@ public sealed class RUILayout : RLayout
 
     private Rect _rect = new(0, 0, 100, 100);
     private bool _isDirty = true;
+    
+    private Rect _lastParentRect = new(0, 0, -1, -1);
+    private Vector2 _lastParentPivot = new(-1, -1);
+    
+    public void SetDirty()
+    {
+        _isDirty = true;
+    }
 
     public void Recalculate()
     {
+        _isDirty = false;
         float pivotLocalX, pivotLocalY;
-        float parentPivotLocalX = 0f, parentPivotLocalY = 0f;
 
         if (Parent is not RUILayout parent)
         {
+#if DEBUG
+            Console.WriteLine($"[RUILayout Warning] Parent {Parent?.RObject.Name} of {RObject.Name} is NOT an RUILayout! Using Absolute 0x0 Origin.");
+#endif
             var width = OffsetMax.X - OffsetMin.X;
             var height = OffsetMax.Y - OffsetMin.Y;
-            _rect = new Rect(OffsetMin.X, OffsetMin.Y, width, height);
             
+            _rect = new Rect(OffsetMin.X, OffsetMin.Y, width, height);
+
             pivotLocalX = _rect.X + width * Pivot.X;
             pivotLocalY = _rect.Y + height * Pivot.Y;
+
+            float localCartesianX = pivotLocalX;
+            float localCartesianY = height - pivotLocalY;
+
+            Position = new Vector3(localCartesianX, localCartesianY, 0f);
         }
         else
         {
-            var p = parent.Rect; 
-            
+            var p = parent.Rect;
+
             var anchorMinPx = new Vector2(p.Width * AnchorMin.X, p.Height * AnchorMin.Y);
             var anchorMaxPx = new Vector2(p.Width * AnchorMax.X, p.Height * AnchorMax.Y);
-            
+
             var min = anchorMinPx + OffsetMin;
             var max = anchorMaxPx + OffsetMax;
             var size = max - min;
-            
+
             _rect = new Rect(min.X, min.Y, size.X, size.Y);
-            
+
             pivotLocalX = _rect.X + size.X * Pivot.X;
             pivotLocalY = _rect.Y + size.Y * Pivot.Y;
-            
-            parentPivotLocalX = p.Width * parent.Pivot.X;
-            parentPivotLocalY = p.Height * parent.Pivot.Y;
-        }
 
-        float localCartesianX = pivotLocalX - parentPivotLocalX;
-        float localCartesianY = pivotLocalY - parentPivotLocalY; 
+            float parentPivotLocalX = p.Width * parent.Pivot.X;
+            float parentPivotLocalY = p.Height * parent.Pivot.Y;
+
+            float localCartesianX = pivotLocalX - parentPivotLocalX;
+            float localCartesianY = -(pivotLocalY - parentPivotLocalY);
+
+            Position = new Vector3(localCartesianX, localCartesianY, 0f);
+        }
         
-        Position = new Vector3(localCartesianX, localCartesianY, 0f);
-        
-        _isDirty = false;
+        foreach (var child in Children)
+        {
+            if (child is RUILayout childLayout)
+            {
+                childLayout.Recalculate();
+            }
+        }
     }
 
     public override void OnUpdate(float deltaTime)

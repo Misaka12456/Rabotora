@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using JetBrains.Annotations;
+using RabotoraX.Core;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
 using RabotoraX.Core.Utility;
@@ -42,7 +43,8 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public bool IgnoreAllPresents { get; set; } = false;
 	
 	private readonly Stopwatch _waitTimer = Stopwatch.StartNew();
-	
+	private readonly Rabotora _rabotora;
+
 	private ID3D11Device? _device;
 	private ID3D11DeviceContext? _context;
 	private IDXGISwapChain? _swapChain;
@@ -72,6 +74,11 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private nint _frameWaitableObject;
 
 	private partial class D2DContextImpl : INative2DRenderContext;
+	
+	public DirectX11(Rabotora rabotora)
+	{
+		_rabotora = rabotora;
+	}
 
 	public void Initialize(INativeWindow window)
 	{
@@ -298,33 +305,30 @@ public partial class DirectX11 : INativeGraphicsAPI
 			if (!IsInitialized) return;
 			if (width <= 0 || height <= 0) return;
 
+			_context!.OMSetRenderTargets((ID3D11RenderTargetView)null!);
+			if (_d2dContext != null) _d2dContext.Target = null;
+        
+			_renderTargetView?.Dispose();
+			_renderTargetView = null;
+			_d2dTargetBitmap?.Dispose();
+			_d2dTargetBitmap = null;
+        
+			_context!.Flush();
+
 			FramebufferSize = (width, height);
         
-			// 1. 严格解绑
-			_context!.ClearState();
-			_context.Flush();
-			if (_d2dContext != null) _d2dContext.Target = null;
-
-			ReleaseResources();
-        
-			// 2. 这里的 Flags 必须和 CreateSwapChain 时完全一样
-			// 既然你之前用了 FrameLatencyWaitableObject，这里必须带上
 			const SwapChainFlags resizeFlags = SwapChainFlags.FrameLatencyWaitableObject;
-        
 			var hr = _swapChain!.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags);
+        
 			if (hr.Failure)
 			{
-				// 如果还是失败，打印错误码排查是否因为缓冲区没释放干净
-				Console.WriteLine($"ResizeBuffers Failed: {hr}");
-				return;
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+				_swapChain.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags).CheckError();
 			}
-        
-			// 3. 重新获取 WaitableObject (Resize 后这个句柄可能会变)
+
 			using var swapChain2 = _swapChain.QueryInterfaceOrNull<IDXGISwapChain2>();
-			if (swapChain2 != null)
-			{
-				_frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
-			}
+			if (swapChain2 != null) _frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
 
 			CreateResources(width, height);
 		}
@@ -337,7 +341,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 
 	public void BeginFrame()
 	{
-		_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
+		SetRenderTarget(null); // 默认回 BackBuffer
+		_context!.RSSetViewport(0, 0, FramebufferSize.Width, FramebufferSize.Height);
+		Clear(0, 0, 0, 1);
 	}
 
 	public void Clear(float r, float g, float b, float a)
@@ -355,28 +361,28 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public void Present(bool vsync = true)
 	{
 		if (IgnoreAllPresents) return;
-		// _context!.Flush();
-		_swapChain!.Present(vsync ? 1u : 0u, PresentFlags.None)/*.CheckError()*/; // Present 失败通常是因为窗口被最小化了，这时候不需要抛异常
+
+		_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
+
+		_swapChain!.Present(vsync ? 1u : 0u, PresentFlags.None);
 	}
 	
 	public void WaitNextFrameReady()
 	{
-		if (_frameWaitableObject != nint.Zero)
+		if (IgnoreAllPresents || _frameWaitableObject == nint.Zero)
 		{
-			uint result = WaitForSingleObject((HANDLE) _frameWaitableObject, 1000);
-
-			if (_waitTimer.ElapsedMilliseconds >= 1000)
-			{
-				_waitTimer.Restart();
-			}
-			if (result != 0)
-			{
-				Thread.Yield();
-			}
+			Thread.Yield();
+			return;
 		}
-		else
+		uint result = WaitForSingleObject((HANDLE) _frameWaitableObject, 1000);
+
+		if (_waitTimer.ElapsedMilliseconds >= 1000)
 		{
-			Thread.Sleep(1);
+			_waitTimer.Restart();
+		}
+		if (result != 0)
+		{
+			Thread.Yield();
 		}
 	}
 
@@ -581,9 +587,19 @@ public partial class DirectX11 : INativeGraphicsAPI
 		return new D3D11RenderTexture(texture, rtv, srv, width, height);
 	}
 	
-	public void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData)
+	public void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0)
 	{
-		uint rowPitch = (uint)(texture.Width * 4);
+		uint rowPitch = stride > 0 ? (uint)stride : (uint)(texture.Width * 4);
+    
+		long requiredSize = rowPitch * texture.Height;
+
+		if (pixelData.Length < requiredSize)
+		{
+#if DEBUG
+			Console.WriteLine($"[Video Error] Buffer size mismatch! Have: {pixelData.Length}, Need: {requiredSize}");
+#endif
+			return;
+		}
 
 		unsafe
 		{
