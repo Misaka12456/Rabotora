@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using JetBrains.Annotations;
-using RabotoraX.Core;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
 using RabotoraX.Core.Utility;
@@ -41,15 +40,16 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public (int Width, int Height) FramebufferSize { get; private set; }
 	public Lock RenderLock { get; } = new();
 	public bool IgnoreAllPresents { get; set; } = false;
+	public D3D11RenderTexture? MainRenderTexture { get; private set; }
 	
 	private readonly Stopwatch _waitTimer = Stopwatch.StartNew();
-	private readonly Rabotora _rabotora;
 
 	private ID3D11Device? _device;
 	private ID3D11DeviceContext? _context;
+	private INativeRenderTexture? _currentRenderTarget;
 	private IDXGISwapChain? _swapChain;
 	
-	private ID3D11RenderTargetView? _renderTargetView;
+	private ID3D11RenderTargetView? _rtvBackBuffer;
 	private ID3D11DepthStencilView? _depthStencilView;
 	private ID3D11Texture2D? _depthBuffer;
 	
@@ -74,11 +74,6 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private nint _frameWaitableObject;
 
 	private partial class D2DContextImpl : INative2DRenderContext;
-	
-	public DirectX11(Rabotora rabotora)
-	{
-		_rabotora = rabotora;
-	}
 
 	public void Initialize(INativeWindow window)
 	{
@@ -90,8 +85,11 @@ public partial class DirectX11 : INativeGraphicsAPI
 		
 		lock (RenderLock)
 		{
-			_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
-			_context!.ClearRenderTargetView(_renderTargetView!, new Color4(0, 0, 0));
+			ApplySetRenderTarget(null);
+			ApplyClear(0, 0, 0, 1);
+#if DEBUG
+			Console.WriteLine("[DirectX11] Redirected to MainRenderTexture. All draw calls will be collected on MainRenderTexture and Present will copy the whole texture to back buffer in one call");
+#endif
         
 			// Make window begin with black screen instead of white flashes
 			_swapChain!.Present(0, PresentFlags.None); 
@@ -174,7 +172,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private void CreateResources(int width, int height)
 	{
 		using var backBuffer = _swapChain!.GetBuffer<ID3D11Texture2D>(0);
-		_renderTargetView = _device!.CreateRenderTargetView(backBuffer);
+		_rtvBackBuffer = _device!.CreateRenderTargetView(backBuffer);
+		MainRenderTexture = (D3D11RenderTexture)CreateRenderTexture(width, height);
+		_currentRenderTarget = MainRenderTexture;
 
 		var depthDesc = new Texture2DDescription()
 		{
@@ -195,18 +195,10 @@ public partial class DirectX11 : INativeGraphicsAPI
 		
 		if (_d2dContext != null)
 		{
-			using var backBufferSurface = _swapChain.GetBuffer<IDXGISurface>(0);
-	
-			var bitmapProps = new BitmapProperties1(
-				new PixelFormat(Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied),
-				96, 96,
-				BitmapOptions.Target | BitmapOptions.CannotDraw);
-
-			_d2dTargetBitmap = _d2dContext.CreateBitmapFromDxgiSurface(backBufferSurface, bitmapProps);
-			_d2dContext.Target = _d2dTargetBitmap;
+			BindD2DTarget();
 		}
 		
-		SetViewport(0, 0, width, height);
+		ApplySetViewport(0, 0, width, height);
 	}
 
 	private void CreateRasterizerStates()
@@ -247,7 +239,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 		};
 		_depthStateNone = _device.CreateDepthStencilState(descNone);
 		
-		SetDepthEnabled(true); // Enable depth testing and writing by default
+		ApplySetDepthEnabled(true); // Enable depth testing and writing by default
 	}
 	
 	private void CreateD2D()
@@ -269,13 +261,14 @@ public partial class DirectX11 : INativeGraphicsAPI
 
 	private void BindD2DTarget()
 	{
-		using var backBuffer = _swapChain!.GetBuffer<IDXGISurface>(0);
+		// using var backBuffer = _swapChain!.GetBuffer<IDXGISurface>(0);
+		using var mainRTBuffer = MainRenderTexture!.Texture.QueryInterface<IDXGISurface>();
 		
 		var bitmapProps = new BitmapProperties1(new PixelFormat(Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied),
 			96, 96, BitmapOptions.Target | BitmapOptions.CannotDraw);
 		
-		using var targetBitmap = _d2dContext!.CreateBitmapFromDxgiSurface(backBuffer, bitmapProps);
-		_d2dContext.Target = targetBitmap;
+		_d2dTargetBitmap = _d2dContext!.CreateBitmapFromDxgiSurface(mainRTBuffer, bitmapProps);
+		_d2dContext.Target = _d2dTargetBitmap;
 	}
 
 	private void ReleaseResources()
@@ -286,8 +279,11 @@ public partial class DirectX11 : INativeGraphicsAPI
 		}
 		_d2dTargetBitmap?.Dispose();
 		_d2dTargetBitmap = null;
-		_renderTargetView?.Dispose();
-		_renderTargetView = null;
+		_rtvBackBuffer?.Dispose();
+		_rtvBackBuffer = null;
+		MainRenderTexture?.Dispose();
+		MainRenderTexture = null;
+		
 		_depthStencilView?.Dispose();
 		_depthStencilView = null;
 		_depthBuffer?.Dispose();
@@ -300,38 +296,55 @@ public partial class DirectX11 : INativeGraphicsAPI
 	// DirectX11.cs
 	public void Resize(int width, int height)
 	{
+		if (!MultiThreadService.IsRenderThread)
+		{
+			MultiThreadService.Invoke(() =>
+			{
+				lock (RenderLock)
+				{
+					ResizeInternal(width, height);
+				}
+			});
+			return;
+		}
+    
 		lock (RenderLock)
 		{
-			if (!IsInitialized) return;
-			if (width <= 0 || height <= 0) return;
-
-			_context!.OMSetRenderTargets((ID3D11RenderTargetView)null!);
-			if (_d2dContext != null) _d2dContext.Target = null;
-        
-			_renderTargetView?.Dispose();
-			_renderTargetView = null;
-			_d2dTargetBitmap?.Dispose();
-			_d2dTargetBitmap = null;
-        
-			_context!.Flush();
-
-			FramebufferSize = (width, height);
-        
-			const SwapChainFlags resizeFlags = SwapChainFlags.FrameLatencyWaitableObject;
-			var hr = _swapChain!.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags);
-        
-			if (hr.Failure)
-			{
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-				_swapChain.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags).CheckError();
-			}
-
-			using var swapChain2 = _swapChain.QueryInterfaceOrNull<IDXGISwapChain2>();
-			if (swapChain2 != null) _frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
-
-			CreateResources(width, height);
+			ResizeInternal(width, height);
 		}
+	}
+
+	private void ResizeInternal(int width, int height)
+	{
+		if (!IsInitialized) return;
+		if (width <= 0 || height <= 0) return;
+
+		_context!.OMSetRenderTargets((ID3D11RenderTargetView)null!);
+		if (_d2dContext != null) _d2dContext.Target = null;
+        
+		_rtvBackBuffer?.Dispose();
+		_rtvBackBuffer = null;
+		_d2dTargetBitmap?.Dispose();
+		_d2dTargetBitmap = null;
+        
+		_context!.Flush();
+
+		FramebufferSize = (width, height);
+        
+		const SwapChainFlags resizeFlags = SwapChainFlags.FrameLatencyWaitableObject;
+		var hr = _swapChain!.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags);
+        
+		if (hr.Failure)
+		{
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+			_swapChain.ResizeBuffers(0, (uint)width, (uint)height, Format.Unknown, resizeFlags).CheckError();
+		}
+
+		using var swapChain2 = _swapChain.QueryInterfaceOrNull<IDXGISwapChain2>();
+		if (swapChain2 != null) _frameWaitableObject = swapChain2.FrameLatencyWaitableObject;
+
+		CreateResources(width, height);
 	}
 
 	public IEnumerable<ShaderPlatform> GetSupportedShaderPlatforms()
@@ -341,16 +354,10 @@ public partial class DirectX11 : INativeGraphicsAPI
 
 	public void BeginFrame()
 	{
-		SetRenderTarget(null); // 默认回 BackBuffer
-		_context!.RSSetViewport(0, 0, FramebufferSize.Width, FramebufferSize.Height);
-		Clear(0, 0, 0, 1);
-	}
-
-	public void Clear(float r, float g, float b, float a)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(Clear));
-		_context!.ClearRenderTargetView(_renderTargetView!, new Color4(r, g, b, a));
-		_context!.ClearDepthStencilView(_depthStencilView!, DepthStencilClearFlags.Depth | DepthStencilClearFlags.Stencil, 1.0f, 0);
+		MultiThreadService.ThrowIfNotRenderThread(nameof(BeginFrame));
+		ApplySetRenderTarget(null); // 默认回 BackBuffer
+		ApplySetViewport(0, 0, FramebufferSize.Width, FramebufferSize.Height);
+		ApplyClear(0, 0, 0, 1);
 	}
 
 	public void EndFrame()
@@ -361,10 +368,17 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public void Present(bool vsync = true)
 	{
 		if (IgnoreAllPresents) return;
-
-		_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
+		
+		using var backBuffer = _swapChain!.GetBuffer<ID3D11Texture2D>(0);
+		_context!.OMSetRenderTargets(_rtvBackBuffer!);
+		_context!.CopyResource(backBuffer, MainRenderTexture!.Texture);
+		
+		// TODO: To enable production-ready advanced shader supported logic (use Draw Call to make MainTexture on-screen instead of CopyResource), uncomment the following line and remove the CopyResource above.
+		// _context!.RSSetState(_rasterizerStateCullBack);
+		// _context!.OMSetBlendState(null, null, 0xFFFFFFFF);
 
 		_swapChain!.Present(vsync ? 1u : 0u, PresentFlags.None);
+		_context!.OMSetRenderTargets(MainRenderTexture.RTV, _depthStencilView);
 	}
 	
 	public void WaitNextFrameReady()
@@ -620,222 +634,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 			}
 		}
 	}
-
-	public void SetRenderTarget(INativeRenderTexture? renderTarget)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetRenderTarget));
-
-		if (renderTarget == null)
-		{
-			_context!.OMSetRenderTargets(_renderTargetView!, _depthStencilView);
-		}
-		else if (renderTarget is D3D11RenderTexture dxRT)
-		{
-			_context!.OMSetRenderTargets(dxRT.RTV, _depthStencilView);
-		}
-		else
-		{
-			throw new ArgumentException("Unsupported render target type for DX11 backend.");
-		}
-	}
-
-	public void SetViewport(float x, float y, float width, float height, float minDepth = 0, float maxDepth = 1)
-	{
-		_context!.RSSetViewport(x, y, width, height, minDepth, maxDepth);
-	}
-
-	public void SetShader(INativeShader shader)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetShader));
-		switch (shader)
-		{
-			case DX11Shader {Type: ShaderType.VertexShader} dxShader:
-			{
-				_context!.VSSetShader((ID3D11VertexShader)dxShader.NativeShader);
-				if (dxShader.InputLayout != null)
-				{
-					_context!.IASetInputLayout(dxShader.InputLayout);
-				}
-
-				break;
-			}
-			case DX11Shader {Type: ShaderType.FragmentShader} dxShader:
-			{
-				_context!.PSSetShader((ID3D11PixelShader)dxShader.NativeShader);
-				break;
-			}
-			case DX11ShaderProgram {Type: ShaderType.VertexFragment} program:
-			{
-				_context!.VSSetShader(program.VertexShader);
-				_context!.PSSetShader(program.FragmentShader);
-				if (program.InputLayout != null)
-				{
-					_context!.IASetInputLayout(program.InputLayout);
-				}
-				break;
-			}
-		}
-	}
-
-	public void SetVertexBuffer(IGpuBuffer buffer, int stride, int offset = 0)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetVertexBuffer));
-		if (buffer is DX11Buffer dxBuffer)
-		{
-			_context!.IASetVertexBuffer(0, dxBuffer.NativeBuffer, (uint)stride, (uint)offset); // Slot 0
-		}
-	}
-
-	public void SetIndexBuffer(IGpuBuffer buffer)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetIndexBuffer));
-		if (buffer is DX11Buffer dxBuffer)
-		{
-			_context!.IASetIndexBuffer(dxBuffer.NativeBuffer, Format.R32_UInt, 0);
-		}
-	}
-
-	public void SetConstantBuffer(int slot, IGpuBuffer buffer, ShaderType stage)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetConstantBuffer));
-		if (buffer is DX11Buffer dxBuffer)
-		{
-			if (stage == ShaderType.VertexShader)
-			{
-				_context!.VSSetConstantBuffer((uint)slot, dxBuffer.NativeBuffer);
-			}
-			else if (stage == ShaderType.FragmentShader)
-			{
-				_context!.PSSetConstantBuffer((uint)slot, dxBuffer.NativeBuffer);
-			}
-		}
-	}
 	
-	[MustDisposeResource]
-	public IDisposable SetCullMode(CullMode mode)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetCullMode));
-		// _lastCullMode = _context!.RSGetState().GetManagedCullMode(); // Store the current cull mode before changing
-		// if (_lastCullMode == mode) return; // No change needed
-		var lastCullMode = _cullModeStack.Peek();
-		if (lastCullMode == mode) return new AutoScope(); // No change needed
-		if (_cullModeStack.Count >= 32)
-		{
-			Debug.Assert(false, "History Cull Modes Count >= 32: too many nested SetCullMode calls without ResumeCullMode. Has any code logic causing circular Cull Mode changes?");
-		}
-		_cullModeStack.Push(mode);
-		var state = mode switch
-		{
-			CullMode.Back => _rasterizerStateCullBack,
-			CullMode.Front => _rasterizerStateCullFront,
-			CullMode.None => _rasterizerStateCullNone,
-			_ => _rasterizerStateCullBack
-		};
-		
-		_context!.RSSetState(state);
-		
-		return new AutoScope(onExit: ResumeCullMode);
-	}
-
-	public void ResumeCullMode()
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(ResumeCullMode));
-		if (_cullModeStack.Count <= 1) return;
-		_cullModeStack.Pop(); // ignore the popped value because we will peek the new current mode
-		var currentMode = _cullModeStack.Peek();
-		var state = currentMode switch
-		{
-			CullMode.Back => _rasterizerStateCullBack,
-			CullMode.Front => _rasterizerStateCullFront,
-			CullMode.None => _rasterizerStateCullNone,
-			_ => _rasterizerStateCullBack
-		};
-			
-		_context!.RSSetState(state);
-	}
-
-	[MustDisposeResource]
-	public IDisposable SetBlendState(BlendState state)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetBlendState));
-		
-		var lastState = _blendStateStack.Peek();
-		if (lastState.Equals(state)) return new AutoScope(); // No change needed
-		
-		if (_blendStateStack.Count >= 32)
-		{
-			Debug.Assert(false, "History Blend States Count >= 32: too many nested SetBlendState calls without ResumeBlendState. Has any code logic causing circular Blend State changes?");
-		}
-		
-		_blendStateStack.Push(state);
-		ApplyBlendState(state);
-		
-		return new AutoScope(onExit: ResumeBlendState);
-	}
-
-	public void ResumeBlendState()
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(ResumeBlendState));
-		if (_blendStateStack.Count <= 1) return;
-		_blendStateStack.Pop(); // ignore the popped value because we will peek the new current state
-		ApplyBlendState(_blendStateStack.Peek());
-	}
-
-	private void ApplyBlendState(BlendState state)
-	{
-		if (!_blendStateCache.TryGetValue(state, out var nativeState))
-		{
-			var desc = new BlendDescription()
-			{
-				AlphaToCoverageEnable = false,
-				IndependentBlendEnable = false
-			};
-
-			desc.RenderTarget[0] = new RenderTargetBlendDescription()
-			{
-				BlendEnable = state.EnableBlending,
-				SourceBlend = MapBlend(state.SrcColor),
-				DestinationBlend = MapBlend(state.DstColor),
-				BlendOperation = MapOp(state.ColorOp),
-				SourceBlendAlpha = MapBlend(state.SrcAlpha),
-				DestinationBlendAlpha = MapBlend(state.DstAlpha),
-				BlendOperationAlpha = MapOp(state.AlphaOp),
-				RenderTargetWriteMask = ColorWriteEnable.All
-			};
-			
-			nativeState = _device!.CreateBlendState(desc);
-			_blendStateCache[state] = nativeState;
-		}
-
-		_context!.OMSetBlendState(nativeState);
-	}
-
-	public void SetDepthEnabled(bool enabled, bool writeEnabled = true)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(SetDepthEnabled));
-		if (!enabled)
-		{
-			_context!.OMSetDepthStencilState(_depthStateNone);
-		}
-		else
-		{
-			_context!.OMSetDepthStencilState(writeEnabled ? _depthStateDefault : _depthStateReadOnly);
-		}
-	}
-
-	public void Draw(int vertexCount, int startVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(Draw));
-		_context!.IASetPrimitiveTopology(ToDxTopology(topology));
-		_context!.Draw((uint)vertexCount, (uint)startVertexLocation);
-	}
-
-	public void DrawIndexed(int indexCount, int startIndexLocation, int baseVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList)
-	{
-		MultiThreadService.ThrowIfNotRenderThread(nameof(DrawIndexed));
-		_context!.IASetPrimitiveTopology(ToDxTopology(topology));
-		_context!.DrawIndexed((uint)indexCount, (uint)startIndexLocation, baseVertexLocation);
-	}
 
 	public INative2DRenderContext? Get2DContext()
 	{

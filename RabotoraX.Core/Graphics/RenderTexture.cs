@@ -1,6 +1,6 @@
 namespace RabotoraX.Core.Graphics;
 
-public class RenderTexture : Object, INativeTexture2D
+public class RenderTexture : Object, INativeRenderTexture
 {
 	public int Width => NativeTexture.Width;
 	public int Height => NativeTexture.Height;
@@ -13,16 +13,6 @@ public class RenderTexture : Object, INativeTexture2D
 			throw new ArgumentException("Width and Height must be greater than zero.");
 		
 		NativeTexture = GraphicsService.API.CreateRenderTexture(width, height);
-	}
-
-	public void Bind()
-	{
-		GraphicsService.API.SetRenderTarget(NativeTexture);
-	}
-	
-	public void Unbind()
-	{
-		GraphicsService.API.SetRenderTarget(null);
 	}
 	
 	protected override void Dispose(bool disposing)

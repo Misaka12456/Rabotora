@@ -26,7 +26,7 @@ public static class Program
 	{
 		using var app = new Rabotora("Example Presentation", 1280, 720, new Fractional(16, 9));
 
-		return app.Run(Example2DGoLiveStage());
+		return app.Run(Example2DGoLiveStage2());
 	}
 
 	private static RStage Example3DStage()
@@ -211,7 +211,7 @@ public static class Program
 		imgLayout.AnchorMax = Vector2.One;
 		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
 		image.Opacity = 1;
-		var clip = new VideoClip(new FileStream(@"<YOUR_VIDEO_FILE_PATH_HERE>", FileMode.Open, FileAccess.Read)); // no need to set VideoFormatType bec. underlying decoder (e.g. Media Foundation) will auto-detect it
+		var clip = new VideoClip(new FileStream(@"<YOUR_VIDEO_PATH_HERE>", FileMode.Open, FileAccess.Read)); // no need to set VideoFormatType bec. underlying decoder (e.g. Media Foundation) will auto-detect it
 		var player = imageObj.AddComponent<RVideoPlayer>();
 		player.Clip = clip;
 		player.Prepare();

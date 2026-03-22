@@ -48,41 +48,52 @@ public class RStage : Object
 
 	public void Render()
 	{
-		if (Type is StageType.Render3D or StageType.Render3DHybrid)
+		var cmd = GraphicsService.API.CreateCommandList();
+		cmd.Begin();
+		try
 		{
-			if (Audience.Main != null)
+			if (Type is StageType.Render3D or StageType.Render3DHybrid)
 			{
-				Audience.Main.Clear();
+				try
+				{
+					cmd.BeginRenderPass(null);
+					Audience.Main?.Clear(cmd);
+					// ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+					foreach (var ro in _rootObjects)
+					{
+						if (ro.IsActive) ro.Render(cmd);
+					}
+				}
+				finally
+				{
+					cmd.EndRenderPass();
+				}
 			}
-			else
+
+			if (Type is StageType.Render2D or StageType.Render3DHybrid)
 			{
-				GraphicsService.API.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W); // to avoid rendering garbage data when no audience is present, which can cause visual artifacts and performance issues.
-			}
-			foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))
-			{
-				ro.Render();
+				var _2d = GraphicsService.API.Get2DContext();
+				if (_2d != null)
+				{
+					if (Type == StageType.Render2D)
+					{
+						cmd.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W);
+					}
+
+					_2d.BeginDraw();
+
+					foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))
+					{
+						ro.Render2D(_2d);
+					}
+
+					_2d.EndDraw();
+				}
 			}
 		}
-
-		if (Type is StageType.Render2D or StageType.Render3DHybrid)
+		finally
 		{
-			var _2d = GraphicsService.API.Get2DContext();
-			if (_2d != null)
-			{
-				if (Type == StageType.Render2D)
-				{
-					GraphicsService.API.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W);
-				}
-
-				_2d.BeginDraw();
-
-				foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))
-				{
-					ro.Render2D(_2d);
-				}
-
-				_2d.EndDraw();
-			}
+			cmd.End();
 		}
 	}
 

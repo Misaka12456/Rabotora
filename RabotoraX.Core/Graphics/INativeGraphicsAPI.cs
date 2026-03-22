@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 
 namespace RabotoraX.Core.Graphics;
 
@@ -20,10 +19,12 @@ public interface INativeGraphicsAPI : IDisposable
 	
 	// 帧控制
 	void BeginFrame();
-	void Clear(float r, float g, float b, float a);
 	void EndFrame();
 	void Present(bool vsync = true); // 分开EndFrame和Present是因为某些图形后端 (比如Vulkan/DX12) 是拆开处理的，而对于那些不区分的后端 (比如OpenGL) 则EndFrame里直接调用Present即可
 	void WaitNextFrameReady();
+
+	INativeCommandList CreateCommandList();
+	void Submit(INativeCommandList commandList);
 	
 	#region 资源创建
 	// 创建缓冲区 (顶点/索引/常量)
@@ -43,38 +44,16 @@ public interface INativeGraphicsAPI : IDisposable
 	INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData);
 	INativeRenderTexture CreateRenderTexture(int width, int height);
 	void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0);
-	
-	void SetRenderTarget(INativeRenderTexture? renderTexture); // 设置当前渲染目标，传入null表示切换回默认帧缓冲
+	INative2DRenderContext? Get2DContext();
 	#endregion
 	
-	#region 管线命令 (Draw Loop)
-	// 设置视口 (Viewport)
-	void SetViewport(float x, float y, float width, float height, float minDepth = 0, float maxDepth = 1);
-
-	// 绑定状态
-	void SetShader(INativeShader shader);
-	void SetVertexBuffer(IGpuBuffer buffer, int stride, int offset = 0);
-	void SetIndexBuffer(IGpuBuffer buffer);
-	void SetConstantBuffer(int slot, IGpuBuffer buffer, ShaderType stage);
-	
-	[MustDisposeResource] IDisposable SetCullMode(CullMode mode); // 只作用于到下次调用SetCullMode/ResumeCullMode为止的Draw Call
-	[MustDisposeResource] IDisposable SetBlendState(BlendState state); // 只作用于到下次调用SetBlendState/ResumeBlendState为止的Draw Call
-	void ResumeCullMode(); // 恢复到上次调用SetCullMode之前的状态
-	void ResumeBlendState(); // 恢复到上次调用SetBlendState之前的状态
-	void SetDepthEnabled(bool enabled, bool writeEnabled = true);
-	
-	// 绘制
-	void Draw(int vertexCount, int startVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList);
-	void DrawIndexed(int indexCount, int startIndexLocation, int baseVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList);
-	
-	INative2DRenderContext? Get2DContext(); // 获取2D渲染上下文，如果当前图形API不支持则返回null
-	#endregion
+	// 纹理与渲染目标在RabotoraX v0.5.3+已移动至INativeCommandList
 	
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Direct3D11.DirectX11", "RabotoraX.Interop.Direct3D11")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Vulkan.Vulkan", "RabotoraX.Interop.Vulkan")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Metal.Metal", "RabotoraX.Interop.Metal")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.OpenGL.OpenGL", "RabotoraX.Interop.OpenGL")]
-	public static INativeGraphicsAPI PlatformDefaultCreate(Rabotora main)
+	public static INativeGraphicsAPI PlatformDefaultCreate()
 	{
 		Type? implType;
 		try
@@ -96,6 +75,6 @@ public interface INativeGraphicsAPI : IDisposable
 			throw new NotImplementedException("This functionality is not implemented in the portable version of this assembly. " +
 			                                  "You should reference the NuGet package from your main application project in order to reference the platform-specific implementation.");
 		}
-		return (INativeGraphicsAPI)Activator.CreateInstance(implType, main) ?? throw new InvalidOperationException("Failed to create instance of the platform-specific graphics API implementation.");
+		return (INativeGraphicsAPI)Activator.CreateInstance(implType)!;
 	}
 }

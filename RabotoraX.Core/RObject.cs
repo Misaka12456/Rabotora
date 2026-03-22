@@ -110,19 +110,19 @@ public sealed class RObject : Object
 		}
 	}
 
-	internal void Render()
+	internal void Render(INativeCommandList cmd)
 	{
 		if (!IsActive) return;
 		foreach (var component in _components)
 		{
 			if (!component.IsEnabled) continue;
 			
-			component.OnRender();
+			component.OnRender(cmd);
 		}
 		
 		foreach (var child in Layout.Children)
 		{
-			child.RObject.Render();
+			child.RObject.Render(cmd);
 		}
 	}
 	

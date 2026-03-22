@@ -93,7 +93,7 @@ public class QuadRenderer : Component
         _pixelShader = api.CreateNativeShader(ShaderType.FragmentShader, ShaderCode, "PSMain");
     }
 
-    public override void OnRender()
+    public override void OnRender(INativeCommandList cmd)
     {
         var api = GraphicsService.API;
         if (Audience.Main == null || _vertexShader == null || _pixelShader == null) return;
@@ -115,20 +115,20 @@ public class QuadRenderer : Component
 
         // 3. 绑定状态
         // 修复：必须同时绑定 VS 和 PS
-        api.SetShader(_vertexShader);
-        api.SetShader(_pixelShader);
+        cmd.SetShader(_vertexShader);
+        cmd.SetShader(_pixelShader);
         
-        api.SetVertexBuffer(_vertexBuffer!, Marshal.SizeOf<VertexPositionColor>());
-        api.SetIndexBuffer(_indexBuffer!);
+        cmd.SetVertexBuffer(_vertexBuffer!, Marshal.SizeOf<VertexPositionColor>());
+        cmd.SetIndexBuffer(_indexBuffer!);
         
         // 绑定常量缓冲到 VS (因为我们在 HLSL 里是在 VS_INPUT 阶段乘的 MVP)
-        api.SetConstantBuffer(0, _constantBuffer!, ShaderType.VertexShader);
-        api.SetConstantBuffer(0, _constantBuffer!, ShaderType.FragmentShader); 
+        cmd.SetConstantBuffer(0, _constantBuffer!, ShaderType.VertexShader);
+        cmd.SetConstantBuffer(0, _constantBuffer!, ShaderType.FragmentShader); 
 
         // 4. Draw Call
         // ReSharper disable once NotDisposedResource
-        api.SetCullMode(CullMode.None);
-        api.DrawIndexed(6, 0, 0);
+        cmd.SetCullMode(CullMode.None);
+        cmd.DrawIndexed(6, 0, 0);
     }
 
     protected override void Dispose(bool disposing)

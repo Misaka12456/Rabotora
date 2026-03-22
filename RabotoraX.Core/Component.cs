@@ -13,7 +13,7 @@ namespace RabotoraX.Core
 		public virtual void OnAwake() { }
 		public virtual void OnStart() { }
 		public virtual void OnUpdate(float deltaTime) { }
-		public virtual void OnRender() { }
+		public virtual void OnRender(INativeCommandList cmd) { }
 
 		public virtual void OnRender2D(INative2DRenderContext context)
 		{

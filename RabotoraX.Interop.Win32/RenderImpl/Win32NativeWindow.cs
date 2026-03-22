@@ -392,6 +392,14 @@ public unsafe class Win32NativeWindow : INativeWindow
 
 				break;
 			}
+			case WM_SYSCHAR:
+			{
+				if (wParam == 0x0D) // Suppress the unintended "ding" sound when pressing Alt + Enter, since we have already handled the full screen toggle in WM_SYSKEYDOWN.
+				{
+					return 0;
+				}
+				break;
+			}
 			case WM_ERASEBKGND:
 				return 1; // Indicate that we handled background erasing to prevent flickering. The game will handle clearing the background itself.
 		}

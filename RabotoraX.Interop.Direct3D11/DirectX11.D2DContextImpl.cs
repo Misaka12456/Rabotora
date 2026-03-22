@@ -100,6 +100,10 @@ public partial class DirectX11
 		public void DrawTextLayout(INativeTextLayout layout, float x, float y, float r, float g, float b, float a)
 		{
 			if (layout is not D2DTextLayout d2dLayout) return;
+			if (D2DContext.NativePointer == 0)
+			{
+				return;
+			}
 			var brush = GetCachedBrush(r, g, b, a);
 			D2DContext.DrawTextLayout(new Vector2(x, y), d2dLayout.InternalLayout, brush, DrawTextOptions.None);
 		}

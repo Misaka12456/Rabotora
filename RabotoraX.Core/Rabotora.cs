@@ -69,7 +69,7 @@ public class Rabotora : IDisposable
 		Window = INativeWindow.PlatformCreate();
 		Window.Create(width, height, title, fixedAspectRatio: fixedAspectRatio);
 
-		Graphics = INativeGraphicsAPI.PlatformDefaultCreate(this);
+		Graphics = INativeGraphicsAPI.PlatformDefaultCreate();
 		Graphics.Initialize(Window);
 		
 		GraphicsService.Initialize(Graphics);

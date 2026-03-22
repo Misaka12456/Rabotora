@@ -18,7 +18,7 @@ public abstract class Component2D : Component
 		}
 	}
 
-	public override void OnRender()
+	public override void OnRender(INativeCommandList cmd)
 	{
 		if (RObject.Stage.Type is StageType.Render2D or StageType.Render3DHybrid)
 		{

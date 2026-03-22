@@ -30,13 +30,13 @@ public class Audience : Component
 		Main ??= this;
 	}
 	
-	public void Clear()
+	public void Clear(INativeCommandList cmd)
 	{
 		if (ClearConfig.ClearFlags == AudienceClearFlags.DoNotClear) return;
 		switch (ClearConfig.ClearFlags)
 		{
 			case AudienceClearFlags.Color:
-				GraphicsService.API.Clear(ClearConfig.ClearColor.X, ClearConfig.ClearColor.Y, ClearConfig.ClearColor.Z, ClearConfig.ClearColor.W);
+				cmd.Clear(ClearConfig.ClearColor.X, ClearConfig.ClearColor.Y, ClearConfig.ClearColor.Z, ClearConfig.ClearColor.W);
 				break;
 		}
 	}

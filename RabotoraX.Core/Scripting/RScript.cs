@@ -1,3 +1,5 @@
+using RabotoraX.Core.Graphics;
+
 namespace RabotoraX.Core.Scripting;
 
 public abstract class RScript : Component
@@ -22,7 +24,7 @@ public abstract class RManagedScript : RScript
 		
 	}
 	
-	public override void OnRender()
+	public override void OnRender(INativeCommandList cmd)
 	{
 		
 	}
