@@ -129,6 +129,7 @@ public class QuadRenderer : Component
         // ReSharper disable once NotDisposedResource
         cmd.SetCullMode(CullMode.None);
         cmd.DrawIndexed(6, 0, 0);
+        cmd.ResumeCullMode();
     }
 
     protected override void Dispose(bool disposing)

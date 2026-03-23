@@ -159,7 +159,7 @@ internal sealed class D3D11CommandList : INativeCommandList
 
 		_cullModeStack.Pop();
 		var current = _cullModeStack.Peek();
-		Enqueue(() => _api.ApplySetCullMode(current));
+		Enqueue(() => _api.ResumeCullMode());
 	}
 
 	[MustDisposeResource]

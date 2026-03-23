@@ -12,8 +12,6 @@ using RabotoraX.Core.UI;
 using RabotoraX.Core.Videos;
 using RabotoraX.Windows.Test.Demo2D;
 using RabotoraX.Windows.Test.Demo3D;
-using TerraFX.Interop.Windows;
-using static TerraFX.Interop.Windows.Windows;
 
 namespace RabotoraX.Windows.Test;
 
@@ -98,7 +96,7 @@ public static class Program
 
 	private static RStage Example2DStage()
 	{
-		var stage = new RStage("Act 1: Hello RabotoraX") {Type = StageType.Render2D, ClearColor = new Vector4(0, 0, 0, 1)};
+		var stage = new RStage("Act 1: Hello RabotoraX") { Type = StageType.Render2D, ClearColor = new Vector4(0, 0, 0, 1) };
 
 		var canvasObj = stage.CreateObject("Canvas");
 		var canvas = canvasObj.AddComponent<RCanvas>();
@@ -106,57 +104,32 @@ public static class Program
 		canvas.ScaleMode = CanvasScaleMode.ScaleWithScreenSize;
 		canvas.MatchMode = ScreenMatchMode.MatchWidthOrHeight;
 		canvas.MatchWidthOrHeight = 0.5f;
-		var ui = canvas.GetComponent<RUILayout>()!;
-		ui.AnchorMin = Vector2.Zero;
-		ui.AnchorMax = Vector2.One;
-		ui.OffsetMin = ui.OffsetMax = Vector2.Zero;
-		ui.Pivot = new Vector2(0f, 0f);
 
-		var text = stage.CreateObject("HelloText").AddComponent<Text>();
-		text.Content = "RabotoraX 2D Stage 示例\nRabotoraX 2D Stage Example";
-		text.Color = new Vector4(0, 1, 0, 1);
-		SetupScreenLayout(text.RObject, Vector2.Zero);
-
-		var t1 = stage.CreateObject("Text1").AddComponent<Text>();
-		t1.Content = "扫码缴费";
+		// --- 文本创建示例 ---
+		var o1 = stage.CreateObject("Text1");
+		var t1 = o1.AddComponent<Text>();
+		var layout1 = (RUILayout) o1.Layout;
+		layout1.SetParent(canvas.Layout);
+		layout1.AnchorMin = layout1.AnchorMax = new Vector2(0, 0); // Top-left corner
+		layout1.Pivot = new Vector2(0, 0); // Set pivot to top-left for easier positioning
+		layout1.AnchoredPosition = new Vector2(150, 250);
+		layout1.Size = new Vector2(200, 150); // Set a fixed size for the text
 		t1.Color = Vector4.One;
-		SetupScreenLayout(t1.RObject, new Vector2(150, 300));
+		t1.FontSize = 24;
+		t1.FontName = "Microsoft YaHei UI"; // 必须指定字体
+		t1.Content = "扫码缴费";
 
-		var t2 = stage.CreateObject("Text2").AddComponent<Text>();
-		t2.Content = "快速离场";
+		var o2 = stage.CreateObject("Text2");
+		var t2 = o2.AddComponent<Text>();
+		var layout2 = (RUILayout) o2.Layout;
+		layout2.SetParent(canvas.Layout);
+		layout2.AnchoredPosition = new Vector2(150, 325);
 		t2.Color = Vector4.One;
-		SetupScreenLayout(t2.RObject, new Vector2(150, 325));
-
-		var t3 = stage.CreateObject("Text3").AddComponent<Text>();
-		t3.Content = "快";
-		t3.Color = Vector4.One;
-		SetupScreenLayout(t3.RObject, new Vector2(150, 350));
-
-		var t4 = stage.CreateObject("Text4").AddComponent<Text>();
-		t4.Content = "快";
-		t4.Color = new Vector4(1, 0, 0, 1);
-		SetupScreenLayout(t4.RObject, new Vector2(150, 375));
-
-		var t5 = stage.CreateObject("InputTest").AddComponent<Text>();
-		t5.Content = "只有按住屏幕才能看到我哦\nHold the screen to see me";
-		t5.Color = new Vector4(111 / 255f, 194 / 255f, 118 / 255f, 1);
-		SetupScreenLayout(t5.RObject, new Vector2(150, 450));
-		t5.RObject.AddComponent<InputTest>();
-		t5.IsEnabled = false;
+		t2.FontSize = 24;
+		t2.FontName = "Microsoft YaHei UI";
+		t2.Content = "快速离场";
 
 		return stage;
-
-		void SetupScreenLayout(RObject obj, Vector2 screenPos)
-		{
-			var layout = obj.GetComponent<RUILayout>()!;
-			layout.SetParent(canvasObj.Layout);
-
-			layout.AnchorMin = Vector2.Zero;
-			layout.AnchorMax = Vector2.Zero;
-
-			layout.Pivot = Vector2.Zero;
-			layout.AnchoredPosition = screenPos;
-		}
 	}
 
 	private static RStage Example2DGoLiveStage()

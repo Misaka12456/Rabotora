@@ -1,4 +1,6 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.UI;
 using ZLinq;
@@ -48,6 +50,13 @@ public class RStage : Object
 
 	public void Render()
 	{
+		Render3D();
+		Render2D();
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private void Render3D()
+	{
 		var cmd = GraphicsService.API.CreateCommandList();
 		cmd.Begin();
 		try
@@ -57,6 +66,9 @@ public class RStage : Object
 				try
 				{
 					cmd.BeginRenderPass(null);
+					(int, int) fbSize = (GraphicsService.LatestWindowState.Width, GraphicsService.LatestWindowState.Height);
+					cmd.SetViewport(0, 0, fbSize.Item1, fbSize.Item2);
+
 					Audience.Main?.Clear(cmd);
 					// ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
 					foreach (var ro in _rootObjects)
@@ -69,34 +81,40 @@ public class RStage : Object
 					cmd.EndRenderPass();
 				}
 			}
-
-			if (Type is StageType.Render2D or StageType.Render3DHybrid)
-			{
-				var _2d = GraphicsService.API.Get2DContext();
-				if (_2d != null)
-				{
-					if (Type == StageType.Render2D)
-					{
-						cmd.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W);
-					}
-
-					_2d.BeginDraw();
-
-					foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))
-					{
-						ro.Render2D(_2d);
-					}
-
-					_2d.EndDraw();
-				}
-			}
 		}
 		finally
 		{
 			cmd.End();
 		}
+		GraphicsService.API.Submit(cmd);
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private void Render2D()
+	{
+		if (Type is StageType.Render2D or StageType.Render3DHybrid)
+		{
+			var _2d = GraphicsService.API.Get2DContext();
+			if (_2d != null)
+			{
+				_2d.BeginDraw();
+				if (Type == StageType.Render2D)
+				{
+					// Must after BeginDraw, otherwise it will D2DERR_WRONG_STATE and discard all the following draw calls in this frame
+					_2d.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W);
+				}
+				
+				foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))
+				{
+					ro.Render2D(_2d);
+				}
+
+				_2d.EndDraw();
+			}
+		}
 	}
 
+	[UsedImplicitly]
 	public void GetRenderGroups(out List<RObject> worldObjects, out List<RObject> uiObjects)
 	{
 		worldObjects = new List<RObject>();
