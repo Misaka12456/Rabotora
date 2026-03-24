@@ -14,7 +14,7 @@
         <AssemblyTitle>RabotoraX Game Engine Core Library</AssemblyTitle>
         <Company>Misaka Castle Group and RabotoraX Contributors</Company>
         <Copyright>(C) Misaka Castle Group and RabotoraX Contributors. All rights reserved. Licensed under 123 Open-Source Organization MIT Public License 2.0.</Copyright>
-        <Version>0.5.4</Version>
+        <Version>0.5.5</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AndroidSdkDirectory>$(AndroidSdkDirectory)</AndroidSdkDirectory>
     </PropertyGroup>
@@ -34,6 +34,10 @@
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\RabotoraX.CodeFix\RabotoraX.CodeFix.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <EmbeddedResource Include="Assets\Shaders\VideoDefault.hlsl" />
     </ItemGroup>
 
 </Project>

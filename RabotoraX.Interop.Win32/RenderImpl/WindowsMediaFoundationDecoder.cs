@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Runtime.Versioning;
 using JetBrains.Annotations;
 using RabotoraX.Core.Videos;
@@ -101,7 +103,32 @@ public class WindowsMediaFoundationDecoder : IVideoDecoder
 					{
 						long sourceBytesToCopy = Math.Min(currentLength, validDataLength);
 						long finalCopySize = Math.Min(sourceBytesToCopy, destination.Length);
+						int i = 0;
 						Buffer.MemoryCopy((void*)ptr, pDest, destination.Length, finalCopySize);
+						if (Avx2.IsSupported)
+						{
+							// 修正值为 16 或 32。既然你之前觉得 32 效果好，我们先用 32 实验
+							// 实际上 Limited Range 的黑电平偏移是 16
+							var offset = Vector256.Create((byte)32); 
+
+							// 每次处理 32 个字节 (8 个像素)
+							for (; i <= finalCopySize - 32; i += 32)
+							{
+								var pixels = Avx.LoadVector256(pDest + i);
+                
+								pixels = Avx2.SubtractSaturate(pixels, offset);
+                
+								Avx.Store(pDest + i, pixels);
+							}
+						}
+
+						// 处理最后剩下的几个字节 (或者不支持 AVX2 的情况)
+						for (; i < finalCopySize; i++)
+						{
+							if ((i + 1) % 4 == 0) continue; // 跳过 Alpha
+							int corrected = pDest[i] - 32;
+							pDest[i] = (byte)(corrected < 0 ? 0 : corrected);
+						}
 					}
 				}
 				return true;
@@ -199,6 +226,9 @@ public class WindowsMediaFoundationDecoder : IVideoDecoder
 		using var videoType = MediaFactory.MFCreateMediaType();
 		videoType.Set(MediaTypeAttributeKeys.MajorType, MediaTypeGuids.Video).CheckError();
 		videoType.Set(MediaTypeAttributeKeys.Subtype, VideoFormatGuids.Rgb32).CheckError();
+		videoType.Set(MediaTypeAttributeKeys.VideoNominalRange, (uint)MFNominalRange.MFNominalRange_0_255).CheckError();
+		videoType.Set(MediaTypeAttributeKeys.VideoPrimaries, (uint)MFVideoPrimaries.MFVideoPrimaries_BT709).CheckError();
+		videoType.Set(MediaTypeAttributeKeys.YuvMatrix, (uint)MFVideoPrimaries.MFVideoPrimaries_BT709).CheckError();
 		if (colorType == VideoRenderColorType.Full)
 		{
 			videoType.Set(MediaTypeAttributeKeys.VideoNominalRange, (uint)eAVEncVideoColorNominalRange.eAVEncVideoColorNominalRange_0_255).CheckError();

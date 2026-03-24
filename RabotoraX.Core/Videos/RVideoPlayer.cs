@@ -1,7 +1,11 @@
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Reflection;
+using System.Text;
+using JetBrains.Annotations;
 using RabotoraX.Core.Audios;
 using RabotoraX.Core.Graphics;
+using RabotoraX.Core.UI;
 using Silk.NET.OpenAL;
 
 namespace RabotoraX.Core.Videos;
@@ -26,6 +30,9 @@ public class RVideoPlayer : Component2D
 	private readonly ArrayPool<byte> _pixelPool = ArrayPool<byte>.Shared;
 	private readonly AutoResetEvent _frameNeededSignal = new(false);
 
+	private INativeShader? _videoShader;
+
+	private RawImage? _rawImage;
 	private Thread? _decodeThread;
 	private volatile bool _running;
 	private double _audioClock;
@@ -52,7 +59,16 @@ public class RVideoPlayer : Component2D
 
 		Texture = new Texture2D();
 		Texture.CreateEmpty2DForVideo(Clip.Width, Clip.Height);
-
+		
+		using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("RabotoraX.Core.Assets.Shaders.VideoDefault.hlsl")!, new UTF8Encoding(false));
+		string fragSource = sr.ReadToEnd();
+		sr.Close();
+		_rawImage = GetComponent<RawImage>();
+		if (GraphicsService.API.ApiName == "Direct3D 12")
+		{
+			_videoShader = GraphicsService.API.CreateNativeShader(ShaderType.FragmentShader, fragSource, "PSMain");
+			_rawImage?.CustomShader = _videoShader;
+		}
 		StartDecodeThread();
 	}
 
@@ -70,6 +86,7 @@ public class RVideoPlayer : Component2D
 		}
 	}
 
+	[UsedImplicitly]
 	public void Pause()
 	{
 		if (_decoder == null) return;
@@ -81,6 +98,7 @@ public class RVideoPlayer : Component2D
 		}
 	}
 
+	[UsedImplicitly]
 	public void Stop()
 	{
 		_isPaused = true;
@@ -127,12 +145,6 @@ public class RVideoPlayer : Component2D
 		{
 			if (_decoder == null) continue;
 			bool worked = false;
-
-			// Video Queue
-			// if (_videoQueue.Count < VideoQueueMaxCacheCount && _decoder.TryReadNextVideoFrame(out var pixels, out int stride, out double vPts))
-			// {
-			// 	_videoQueue.Enqueue(new VideoFrame {Pixels = pixels.ToArray(), Stride = stride, Pts = vPts});
-			// }
 			if (_videoQueue.Count < VideoQueueMaxCacheCount)
 			{
 				int frameSize = Clip!.Height * _decoder.Stride;
@@ -272,7 +284,6 @@ public class RVideoPlayer : Component2D
 	private void UpdateRenderTexturePixels(VideoFrame frame)
 	{
 		if (Texture == null) return;
-
 		GraphicsService.API.UpdateTexture2D(Texture.NativeTexture, frame.Pixels, frame.Stride);
 	}
 
@@ -318,6 +329,12 @@ public class RVideoPlayer : Component2D
 		{
 			_running = false;
 			_decodeThread?.Join();
+			if (GraphicsService.API.ApiName == "Direct3D 12")
+			{
+				_rawImage?.CustomShader = null;
+				_videoShader?.Dispose();
+				_videoShader = null;
+			}
 
 			AudioService.AL.SourceStop(_alSource);
 			AudioService.AL.DeleteSource(_alSource);

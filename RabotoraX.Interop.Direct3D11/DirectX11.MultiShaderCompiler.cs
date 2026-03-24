@@ -18,10 +18,9 @@ public partial class DirectX11 : IMultiPlatformShaderCompiler
 	internal ID2D1Effect GetEffectInstance(Guid effectId)
 	{
 		if (_effectInstances.TryGetValue(effectId, out var effect))
+		{
 			return effect;
-            
-		// 注意：实际开发中，这里需要根据 Guid 重新创建 Effect 实例
-		// 目前如果缓存没有，暂时抛出异常或返回一个错误处理
+		}
 		throw new Exception($"Effect instance {effectId} not initialized. D2D Custom Effects require registration.");
 	}
 	

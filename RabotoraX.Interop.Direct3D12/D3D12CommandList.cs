@@ -1,37 +1,39 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Utility;
+using RabotoraX.Interop.Direct3D12.Rendering;
+using Vortice.Direct3D12;
+using CullMode = RabotoraX.Core.Graphics.CullMode;
 
-namespace RabotoraX.Interop.Direct3D11;
+namespace RabotoraX.Interop.Direct3D12;
 
 [SupportedOSPlatform("windows")]
-internal sealed class D3D11CommandList : INativeCommandList
+public sealed class D3D12CommandList : INativeCommandList
 {
 	private const int MaxRenderPassDepth = 16;
 	
-	private readonly DirectX11 _api;
+	private readonly DirectX12 _api;
 	private readonly List<Action> _commands = [];
-
+	
 	private readonly Stack<CullMode> _cullModeStack = new([CullMode.Back]);
 	private readonly Stack<BlendState> _blendStateStack = new([BlendState.AlphaBlend]);
 	private readonly Stack<INativeRenderTexture?> _renderTargetStack = new();
 	
 	private bool _begun, _ended;
-
-	internal D3D11CommandList(DirectX11 api)
+	
+	public D3D12CommandList(DirectX12 api)
 	{
 		_api = api;
 	}
+	
 
 	public void Begin()
 	{
 		if (_begun && !_ended)
 		{
-			throw new InvalidOperationException("[D3D11CommandList] CommandList is already recording.");
+			throw new InvalidOperationException("[D3D12CommandList] CommandList is already recording.");
 		}
 		
 		_commands.Clear();
@@ -50,11 +52,11 @@ internal sealed class D3D11CommandList : INativeCommandList
 	{
 		if (!_begun)
 		{
-			throw new InvalidOperationException("[D3D11CommandList] Call Begin() to begin recording commands first.");
+			throw new InvalidOperationException("[D3D12CommandList] Call Begin() to begin recording commands first.");
 		}
 		if (_ended)
 		{
-			throw new InvalidOperationException("[D3D11CommandList] CommandList has already ended recording.");
+			throw new InvalidOperationException("[D3D12CommandList] CommandList has already ended recording.");
 		}
 		
 		_ended = true;
@@ -64,11 +66,11 @@ internal sealed class D3D11CommandList : INativeCommandList
 	{
 		if (!_begun || _ended)
 		{
-			throw new InvalidOperationException("[D3D11CommandList] CommandList is not recording.");
+			throw new InvalidOperationException("[D3D12CommandList] CommandList is not recording.");
 		}
 		_commands.Add(action);
 	}
-
+	
 	public void BeginRenderPass(INativeRenderTexture? renderTexture)
 	{
 		Enqueue(() =>
@@ -91,7 +93,7 @@ internal sealed class D3D11CommandList : INativeCommandList
 		{
 			if (_renderTargetStack.Count == 0)
 			{
-				throw new InvalidOperationException("[D3D11CommandList] Mismatched EndRenderPass.");
+				throw new InvalidOperationException("[D3D12CommandList] Mismatched EndRenderPass.");
 			}
 
 			_renderTargetStack.Pop();
@@ -115,24 +117,30 @@ internal sealed class D3D11CommandList : INativeCommandList
 
 	public void SetShader(INativeShader shader)
 	{
-		Enqueue(() => _api.ApplySetShader(shader));
+		Enqueue(() => _api._currentShader = shader);
 	}
 
 	public void SetVertexBuffer(IGpuBuffer buffer, int stride, int offset = 0)
 	{
-		Enqueue(() => _api.ApplySetVertexBuffer(buffer, stride, offset));
+		Enqueue(() =>
+		{
+			_api._currentVBuffer = (DX12Buffer)buffer;
+			_api._currentVStride = stride;
+			_api._currentVOffset = offset;
+		});
 	}
-
-	public void SetIndexBuffer(IGpuBuffer buffer)
-	{
-		Enqueue(() => _api.ApplySetIndexBuffer(buffer));
-	}
-
+	
 	public void SetConstantBuffer(int slot, IGpuBuffer buffer, ShaderType stage)
 	{
 		Enqueue(() => _api.ApplySetConstantBuffer(slot, buffer, stage));
 	}
 
+	public void SetIndexBuffer(IGpuBuffer buffer)
+	{
+		Enqueue(() => _api._currentIBuffer = (DX12Buffer)buffer);
+	}
+	
+	
 	[MustDisposeResource]
 	public IDisposable SetCullMode(CullMode mode)
 	{
@@ -146,7 +154,7 @@ internal sealed class D3D11CommandList : INativeCommandList
 		Enqueue(() => _api.ApplySetCullMode(mode));
 		return new AutoScope(onExit: ResumeCullMode);
 	}
-
+	
 	public void ResumeCullMode()
 	{
 		if (_cullModeStack.Count <= 1)
@@ -184,11 +192,15 @@ internal sealed class D3D11CommandList : INativeCommandList
 		=> Enqueue(() => _api.ApplySetDepthEnabled(enabled, writeEnabled));
 
 	public void Draw(int vertexCount, int startVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList)
-		=> Enqueue(() => _api.ApplyDraw(vertexCount, startVertexLocation, topology));
+	{
+		Enqueue(() => _api.ApplyDraw(vertexCount, startVertexLocation, topology));
+	}
 
 	public void DrawIndexed(int indexCount, int startIndexLocation, int baseVertexLocation, PrimitiveTopology topology = PrimitiveTopology.TriangleList)
-		=> Enqueue(() => _api.ApplyDrawIndexed(indexCount, startIndexLocation, baseVertexLocation, topology));
-
+	{
+		Enqueue(() => _api.ApplyDrawIndexed(indexCount, startIndexLocation, baseVertexLocation, topology));
+	}
+	
 	internal void Execute()
 	{
 		if (!_begun || !_ended)

@@ -521,12 +521,18 @@ public partial class DirectX11 : INativeGraphicsAPI
 					layout = _device.CreateInputLayout(elements, shaderByteCode);
 				}
 
-				return new DX11Shader(vs, ShaderType.VertexShader, layout, shaderByteCode);
+				return new DX11Shader(vs, ShaderType.VertexShader, layout, shaderByteCode)
+				{
+					VertSource = sourceCode,
+				};
 			}
 			else
 			{
 				var ps = _device!.CreatePixelShader(shaderByteCode);
-				return new DX11Shader(ps, ShaderType.FragmentShader);
+				return new DX11Shader(ps, ShaderType.FragmentShader)
+				{
+					FragSource = sourceCode
+				};
 			}
 		}
 		finally
@@ -548,7 +554,11 @@ public partial class DirectX11 : INativeGraphicsAPI
 			throw new InvalidOperationException("Failed to create shader program: Invalid vertex or fragment shader.");
 		}
 
-		return new DX11ShaderProgram((ID3D11VertexShader)vertexShader.NativeShader, (ID3D11PixelShader)fragmentShader.NativeShader, vertexShader.InputLayout);
+		return new DX11ShaderProgram((ID3D11VertexShader) vertexShader.NativeShader, (ID3D11PixelShader) fragmentShader.NativeShader, vertexShader.InputLayout)
+		{
+			VertSource = vertSource,
+			FragSource = fragSource
+		};
 	}
 
 	public unsafe INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData)

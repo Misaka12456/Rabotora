@@ -16,6 +16,7 @@
     <ItemGroup>
         <ProjectReference Include="..\RabotoraX.Core\RabotoraX.Core.csproj" />
         <ProjectReference Include="..\RabotoraX.Interop.Direct3D11\RabotoraX.Interop.Direct3D11.csproj" />
+        <ProjectReference Include="..\RabotoraX.Interop.Direct3D12\RabotoraX.Interop.Direct3D12.csproj" />
         <ProjectReference Include="..\RabotoraX.Interop.Win32\RabotoraX.Interop.Win32.csproj" />
     </ItemGroup>
 

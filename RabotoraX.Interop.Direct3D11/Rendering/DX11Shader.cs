@@ -7,6 +7,8 @@ internal class DX11Shader : INativeShader
 {
 	public ID3D11DeviceChild NativeShader { get; } // VertexShader or PixelShader
 	public ID3D11InputLayout? InputLayout { get; } // 仅 VertexShader 需要
+	public string? VertSource { get; init; }
+	public string? FragSource { get; init; }
 	public byte[]? ByteCode { get; }
 	public ShaderType Type { get; }
 	

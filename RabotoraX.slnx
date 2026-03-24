@@ -6,6 +6,7 @@
   <Folder Name="/RabotoraX/RabotoraX Basic Framework/">
     <Project Path="RabotoraX.Core/RabotoraX.Core.csproj" />
     <Project Path="RabotoraX.Interop.Direct3D11/RabotoraX.Interop.Direct3D11.csproj" />
+    <Project Path="RabotoraX.Interop.Direct3D12/RabotoraX.Interop.Direct3D12.csproj" />
     <Project Path="RabotoraX.Interop.Win32/RabotoraX.Interop.Win32.csproj" />
   </Folder>
   <Folder Name="/RabotoraX/RabotoraX Code Analyzers/">

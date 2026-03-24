@@ -5,7 +5,8 @@ namespace RabotoraX.Core.Graphics;
 
 public interface INativeShader : IDisposable
 {
-	
+	public string? VertSource { get; }
+	public string? FragSource { get; }
 }
 
 public enum BlendFactor
@@ -71,6 +72,7 @@ public enum ShaderPlatform
 	Unavailable = 0,
 	HLSL11 = 1, // Direct3D 11 HLSL
 	HLSL2D11 = 2, // Direct2D 11 HLSL (for Direct2D effects -- Fragment Shader Only)
+	HLSL12 = 3, // Direct3D 12 HLSL
 	HLSLVulkan = 3, // Vulkan HLSL (via DXC)
 	GLSL = 10, // OpenGL GLSL
 	GLSLVulkan = 11, // Vulkan GLSL

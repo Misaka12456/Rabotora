@@ -50,6 +50,7 @@ public interface INativeGraphicsAPI : IDisposable
 	// 纹理与渲染目标在RabotoraX v0.5.3+已移动至INativeCommandList
 	
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Direct3D11.DirectX11", "RabotoraX.Interop.Direct3D11")]
+	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Direct3D12.DirectX12", "RabotoraX.Interop.Direct3D12")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Vulkan.Vulkan", "RabotoraX.Interop.Vulkan")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Metal.Metal", "RabotoraX.Interop.Metal")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.OpenGL.OpenGL", "RabotoraX.Interop.OpenGL")]
