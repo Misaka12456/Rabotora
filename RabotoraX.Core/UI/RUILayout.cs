@@ -123,9 +123,6 @@ public sealed class RUILayout : RLayout
 
         if (Parent is not RUILayout parent)
         {
-#if DEBUG
-            Console.WriteLine($"[RUILayout Warning] Parent {Parent?.RObject.Name} of {RObject.Name} is NOT an RUILayout! Using Absolute 0x0 Origin.");
-#endif
             var width = OffsetMax.X - OffsetMin.X;
             var height = OffsetMax.Y - OffsetMin.Y;
             

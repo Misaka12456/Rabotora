@@ -103,32 +103,7 @@ public class WindowsMediaFoundationDecoder : IVideoDecoder
 					{
 						long sourceBytesToCopy = Math.Min(currentLength, validDataLength);
 						long finalCopySize = Math.Min(sourceBytesToCopy, destination.Length);
-						int i = 0;
 						Buffer.MemoryCopy((void*)ptr, pDest, destination.Length, finalCopySize);
-						if (Avx2.IsSupported)
-						{
-							// 修正值为 16 或 32。既然你之前觉得 32 效果好，我们先用 32 实验
-							// 实际上 Limited Range 的黑电平偏移是 16
-							var offset = Vector256.Create((byte)32); 
-
-							// 每次处理 32 个字节 (8 个像素)
-							for (; i <= finalCopySize - 32; i += 32)
-							{
-								var pixels = Avx.LoadVector256(pDest + i);
-                
-								pixels = Avx2.SubtractSaturate(pixels, offset);
-                
-								Avx.Store(pDest + i, pixels);
-							}
-						}
-
-						// 处理最后剩下的几个字节 (或者不支持 AVX2 的情况)
-						for (; i < finalCopySize; i++)
-						{
-							if ((i + 1) % 4 == 0) continue; // 跳过 Alpha
-							int corrected = pDest[i] - 32;
-							pDest[i] = (byte)(corrected < 0 ? 0 : corrected);
-						}
 					}
 				}
 				return true;
@@ -240,7 +215,7 @@ public class WindowsMediaFoundationDecoder : IVideoDecoder
 	    
 		MediaFactory.MFSetAttributeSize(videoType, MediaTypeAttributeKeys.FrameSize, w, h).CheckError();
 		sourceReader.SetCurrentMediaType((int)SourceReaderIndex.FirstVideoStream, videoType);
-
+		
 		using var currentVideoType = sourceReader.GetCurrentMediaType((int)SourceReaderIndex.FirstVideoStream);
 		s = (int)currentVideoType.GetUInt32(MediaTypeAttributeKeys.DefaultStride);
 		if (s == 0) s = (int)w * 4;

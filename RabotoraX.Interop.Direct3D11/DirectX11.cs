@@ -95,6 +95,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 			_swapChain!.Present(0, PresentFlags.None); 
 		}
 		
+#if DEBUG
+		Console.WriteLine($"Initialized Graphics API Backend as {ApiName} on device {DeviceName}");
+#endif
 		IsInitialized = true;
 	}
 
@@ -586,6 +589,32 @@ public partial class DirectX11 : INativeGraphicsAPI
 			return new D3D11Texture2D(texture, srv, width, height);
 		}
 	}
+	
+	public unsafe INativeTexture2D CreateTexture2D(int width, int height, GpuFormat format, ReadOnlySpan<byte> pixelData)
+	{
+		MultiThreadService.ThrowIfNotRenderThread(nameof(CreateTexture2D));
+
+		var desc = new Texture2DDescription()
+		{
+			Width = (uint) width,
+			Height = (uint) height,
+			MipLevels = 1,
+			ArraySize = 1,
+			Format = MapFormat(format),
+			SampleDescription = new SampleDescription(1, 0),
+			Usage = ResourceUsage.Default,
+			BindFlags = BindFlags.ShaderResource,
+			CPUAccessFlags = CpuAccessFlags.None
+		};
+
+		fixed (byte* pData = pixelData)
+		{
+			var initData = new SubresourceData(pData, (uint)width * 4);
+			var texture = _device!.CreateTexture2D(desc, new[] { initData });
+			var srv = _device!.CreateShaderResourceView(texture);
+			return new D3D11Texture2D(texture, srv, width, height);
+		}
+	}
 
 	public INativeRenderTexture CreateRenderTexture(int width, int height)
 	{
@@ -607,7 +636,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 		var texture = _device!.CreateTexture2D(desc);
 		var rtv = _device.CreateRenderTargetView(texture);
 		var srv = _device.CreateShaderResourceView(texture);
-		
+
 		return new D3D11RenderTexture(texture, rtv, srv, width, height);
 	}
 	

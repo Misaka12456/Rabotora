@@ -16,10 +16,10 @@ using RabotoraX.Windows.Test.Demo3D;
 namespace RabotoraX.Windows.Test;
 
 [SupportedOSPlatform("windows")]
+[SuppressMessage("ReSharper", "UnusedMember.Local")]
 public static class Program
 {
 	[STAThread]
-	[SuppressMessage("ReSharper", "AccessToDisposedClosure")]
 	public static int Main(string[] args)
 	{
 		using var app = new Rabotora("Example Presentation", 1280, 720, new Fractional(16, 9));
@@ -88,7 +88,7 @@ public static class Program
 
 		var text = stage.CreateObject("HelloText").AddComponent<Text>();
 		text.Content = "RabotoraX 3D Hybrid (3D + 2D) Stage 示例\nRabotoraX 3D Hybrid (3D + 2D) Stage Example";
-		text.Color = Vector4.One; // White text
+		text.Color = Color.White;
 		text.Layout.SetParent(canvasObj.Layout);
 
 		return stage;
@@ -114,7 +114,7 @@ public static class Program
 		layout1.Pivot = new Vector2(0, 0); // Set pivot to top-left for easier positioning
 		layout1.AnchoredPosition = new Vector2(150, 250);
 		layout1.Size = new Vector2(200, 150); // Set a fixed size for the text
-		t1.Color = Vector4.One;
+		t1.Color = Color.White;
 		t1.FontSize = 24;
 		t1.FontName = "Microsoft YaHei UI"; // 必须指定字体
 		t1.Content = "扫码缴费";
@@ -124,7 +124,7 @@ public static class Program
 		var layout2 = (RUILayout) o2.Layout;
 		layout2.SetParent(canvas.Layout);
 		layout2.AnchoredPosition = new Vector2(150, 325);
-		t2.Color = Vector4.One;
+		t2.Color = Color.White;
 		t2.FontSize = 24;
 		t2.FontName = "Microsoft YaHei UI";
 		t2.Content = "快速离场";
@@ -151,14 +151,26 @@ public static class Program
 		imgLayout.AnchorMin = Vector2.Zero;
 		imgLayout.AnchorMax = Vector2.One;
 		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
-		image.Opacity = 0;
+		image.Opacity = 1;
 		using var pkg = RDataPackage.Open("Resources/Demo2D_Data.pkg");
 		using var stream = pkg.OpenEntry("Assets/Sprites/Splash.png") ?? throw new InvalidOperationException("Failed to load image from package.");
 		var tex = new Texture2D();
 		tex.Load2DImage(stream);
 		image.Sprite = Sprite.Create(tex);
-		image.IsEnabled = false;
-		imageObj.AddComponent<ImageTilt>();
+		image.IsEnabled = true;
+		var button = imageObj.AddComponent<Button>();
+		button.TargetRenderable = image;
+		button.Transition = SelectableTransition.Opacity;
+		button.StateOpacities = new ButtonStateOpacities()
+		{
+			NormalOpacity = 1.0f,
+			PressedOpacity = 0.75f,
+		};
+		button.EventOnClick += () =>
+		{
+			Console.WriteLine("Clicked!");
+		};
+		button.IsEnabled = true;
 
 		return stage;
 	}
@@ -184,7 +196,7 @@ public static class Program
 		imgLayout.AnchorMax = Vector2.One;
 		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
 		image.Opacity = 1;
-		var clip = new VideoClip(new FileStream(@"<YOUR_VIDEO_PATH_HERE>", FileMode.Open, FileAccess.Read)); // no need to set VideoFormatType bec. underlying decoder (e.g. Media Foundation) will auto-detect it
+		var clip = new VideoClip(new FileStream("<YOUR_VIDEO_PATH_HERE>", FileMode.Open, FileAccess.Read));
 		var player = imageObj.AddComponent<RVideoPlayer>();
 		player.Clip = clip;
 		player.Prepare();
@@ -200,7 +212,7 @@ public static class Program
 		statusLayout.Pivot = new Vector2(0, 0); // Set pivot to top-left for easier positioning
 		statusLayout.AnchoredPosition = new Vector2(10, 10); // 10 pixels from the top-left corner
 		statusLayout.Size = new Vector2(400, 50); // Set a fixed size for the status text
-		statusText.Color = new Vector4(0, 0, 0, 1); // Black text
+		statusText.Color = Color.Black; // Black text
 		statusText.FontName = "Microsoft YaHei UI";
 		statusText.FontSize = 18;
 		statusText.Content = "Idle";

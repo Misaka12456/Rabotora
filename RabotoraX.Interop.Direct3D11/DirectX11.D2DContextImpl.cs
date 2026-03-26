@@ -64,17 +64,14 @@ public partial class DirectX11
 
 		public void DrawImage(INativeTexture2D texture, float x, float y, float width, float height, float opacity = 1)
 		{
-			// if (texture is not D2DTexture d2dTex) return;
-			var nativeTex = texture is Texture2D managedTex ? managedTex.NativeTexture : texture;
-			if (nativeTex is not D2DTexture d2dTex) return;
+			if (texture is not D2DTexture d2dTex) return;
 			var descRect = new Rect(x, y, width, height); 
 			D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
 		}
 
 		public void DrawImage(INativeTexture2D texture, RRect sourceRect, float x, float y, float width, float height, float opacity = 1)
 		{
-			var nativeTex = texture is Texture2D managedTex ? managedTex.NativeTexture : texture;
-			if (nativeTex is not D2DTexture d2dTex) return;
+			if (texture is not D2DTexture d2dTex) return;
 			var destRect = new Rect(x, y, width, height); 
 			var srcRect = new RawRectF(sourceRect.X, sourceRect.Y, sourceRect.X + sourceRect.Width, sourceRect.Y + sourceRect.Height);
 
@@ -174,6 +171,11 @@ public partial class DirectX11
 				var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), props);
 				return new D2DTexture(bitmap);
 			}
+		}
+
+		public INativeTexture2D CreateVideoTexture(int width, int height, GpuFormat format, ReadOnlyMemory<byte>? initialData = null)
+		{
+			return _parent.CreateTexture2D(width, height, format, initialData.GetValueOrDefault().Span);
 		}
 
 		public INativeTexture2D CreateEmptyTexture(int width, int height)

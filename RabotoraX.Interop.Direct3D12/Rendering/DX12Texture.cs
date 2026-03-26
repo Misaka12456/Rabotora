@@ -8,7 +8,7 @@ public class DX12Texture2D : INativeTexture2D
 	public ID3D12Resource Resource { get; }
 	public int Width { get; }
 	public int Height { get; }
-	
+
 	public DX12Texture2D(ID3D12Resource res, int width, int height)
 	{
 		Resource = res;

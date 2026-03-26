@@ -13,7 +13,7 @@ namespace RabotoraX.Core.Videos;
 public class RVideoPlayer : Component2D
 {
 	private const int BufferCount = 12;
-	private const int VideoQueueMaxCacheCount = 45;
+	private const int VideoQueueMaxCacheCount = 20;
 
 	public VideoClip? Clip { get; set; }
 	public Texture2D? Texture { get; private set; }
@@ -25,6 +25,7 @@ public class RVideoPlayer : Component2D
 	private IVideoDecoder? _decoder;
 	private uint _alSource;
 	private readonly Queue<uint> _alBuffers = new();
+	private readonly Queue<double> _alBufferPtsQueue = new();
 	private readonly ConcurrentQueue<VideoFrame> _videoQueue = new();
 	private readonly ConcurrentQueue<AudioFrame> _audioQueue = new();
 	private readonly ArrayPool<byte> _pixelPool = ArrayPool<byte>.Shared;
@@ -144,34 +145,47 @@ public class RVideoPlayer : Component2D
 		while (_running)
 		{
 			if (_decoder == null) continue;
-			bool worked = false;
-			if (_videoQueue.Count < VideoQueueMaxCacheCount)
+
+			bool videoFull = _videoQueue.Count >= VideoQueueMaxCacheCount;
+			bool audioFull = _audioQueue.Count >= 60;
+
+			// Only when both queues are full that we wait
+			if (videoFull && audioFull)
 			{
-				int frameSize = Clip!.Height * _decoder.Stride;
+				_frameNeededSignal.WaitOne(5);
+				continue;
+			}
+
+			bool worked = false;
+
+			// Video Queue
+			if (!videoFull)
+			{
+				// int frameSize = Clip!.Height * _decoder.Stride;
+				int frameSize = (int) (Clip!.Height * _decoder.Stride * 1.5f); // NV12 format may require up to 1.5x the size of the Y plane for the full frame
 				byte[] buffer = _pixelPool.Rent(frameSize);
-				
+            
 				if (_decoder.TryReadNextVideoFrame(buffer, out int stride, out double vPts))
 				{
 					_videoQueue.Enqueue(new VideoFrame {Pixels = buffer, Stride = stride, Pts = vPts});
+					worked = true;
 				}
 				else
 				{
 					_pixelPool.Return(buffer);
-					Thread.Sleep(5);
 				}
-				worked = true;
-			}
-			else
-			{
-				_frameNeededSignal.WaitOne(5);
 			}
 
 			// Audio Queue
-			if (_audioQueue.Count < 60 && _decoder.TryReadNextAudioBlock(out var a))
+			if (!audioFull && _decoder.TryReadNextAudioBlock(out var a))
 			{
+				byte[] rentedBuffer = ArrayPool<byte>.Shared.Rent(a.Samples.Length);
+				a.Samples.CopyTo(rentedBuffer);
 				_audioQueue.Enqueue(new AudioFrame
 				{
-					Samples = a.Samples.ToArray(),
+					// Samples = a.Samples.ToArray(),
+					Samples = rentedBuffer,
+					SampleLength = a.Samples.Length,
 					SampleRate = a.SampleRate,
 					Channels = a.Channels,
 					BitDepth = a.BitDepth,
@@ -182,7 +196,7 @@ public class RVideoPlayer : Component2D
 
 			if (!worked)
 			{
-				Thread.Yield();
+				Thread.Sleep(1);
 			}
 		}
 	}
@@ -206,6 +220,12 @@ public class RVideoPlayer : Component2D
 			{
 				_alBuffers.Enqueue(b);
 			}
+
+			// Dequeue the corresponding PTS for the processed buffers after buffers are played
+			for (int i = 0; i < processed; i++)
+			{
+				_alBufferPtsQueue.TryDequeue(out _);
+			}
 		}
 
 		while (_alBuffers.Count > 0 && _audioQueue.TryDequeue(out var frame))
@@ -214,8 +234,8 @@ public class RVideoPlayer : Component2D
 
 			fixed (byte* p = frame.Samples)
 			{
-				AudioService.AL.BufferData(buf, GetFormat(frame),
-					p, frame.Samples.Length, frame.SampleRate);
+				// Here we used a pooled Samples array, so we must use SampleLength instead of Samples.Length
+				AudioService.AL.BufferData(buf, GetFormat(frame), p, frame.SampleLength, frame.SampleRate);
 			}
 
 			uint[] tmp = [buf];
@@ -224,7 +244,18 @@ public class RVideoPlayer : Component2D
 				AudioService.AL.SourceQueueBuffers(_alSource, 1, p);
 			}
 
-			_audioClock = frame.Pts;
+			_alBufferPtsQueue.Enqueue(frame.Pts);
+
+			if (frame.Samples != null)
+			{
+				ArrayPool<byte>.Shared.Return(frame.Samples);
+			}
+		}
+
+		// Fixed the audio clock to the PTS of the front buffer in queue
+		if (_alBufferPtsQueue.TryPeek(out double frontPts))
+		{
+			_audioClock = frontPts;
 		}
 
 		AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.SourceState, out int state);
@@ -311,9 +342,15 @@ public class RVideoPlayer : Component2D
 			}
 		}
 
-		while (_audioQueue.TryDequeue(out _))
+		while (_audioQueue.TryDequeue(out var frame))
 		{
+			if (frame.Samples != null)
+			{
+				ArrayPool<byte>.Shared.Return(frame.Samples);
+			}
 		}
+		
+		_alBufferPtsQueue.Clear();
 	}
 
 	private static BufferFormat GetFormat(AudioFrame d)

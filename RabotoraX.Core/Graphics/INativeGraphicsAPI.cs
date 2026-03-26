@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using RabotoraX.Core.Diagnostics;
 
 namespace RabotoraX.Core.Graphics;
 
@@ -41,6 +42,7 @@ public interface INativeGraphicsAPI : IDisposable
 	#endregion
 	
 	#region 纹理与渲染目标
+
 	INativeTexture2D CreateTexture2D(int width, int height, ReadOnlySpan<byte> pixelData);
 	INativeRenderTexture CreateRenderTexture(int width, int height);
 	void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0);
@@ -54,12 +56,29 @@ public interface INativeGraphicsAPI : IDisposable
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Vulkan.Vulkan", "RabotoraX.Interop.Vulkan")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Metal.Metal", "RabotoraX.Interop.Metal")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.OpenGL.OpenGL", "RabotoraX.Interop.OpenGL")]
-	public static INativeGraphicsAPI PlatformDefaultCreate()
+	public static INativeGraphicsAPI Create()
+	{
+#if DEBUG
+		var dialog = INativeGraphicsAPISelectDialog.PlatformCreate();
+		if (dialog != null && dialog.GetIsUserRequestedToSelect())
+		{
+			var type = dialog.ShowDialog();
+			if (type != null)
+			{
+				return (INativeGraphicsAPI)Activator.CreateInstance(type)!;
+			}
+			Environment.Exit(0);
+		}
+#endif
+		return PlatformDefaultCreate();
+	}
+
+	private static INativeGraphicsAPI PlatformDefaultCreate()
 	{
 		Type? implType;
 		try
 		{
-			implType = OperatingSystem.IsWindows() ? Type.GetType("RabotoraX.Interop.Direct3D11.DirectX11, RabotoraX.Interop.Direct3D11") :
+			implType = OperatingSystem.IsWindows() ? Type.GetType("RabotoraX.Interop.Direct3D12.DirectX12, RabotoraX.Interop.Direct3D12") :
 				OperatingSystem.IsLinux() ? Type.GetType("RabotoraX.Interop.Vulkan.Vulkan, RabotoraX.Interop.Vulkan") :
 				OperatingSystem.IsMacOS() ? Type.GetType("RabotoraX.Interop.Metal.Metal, RabotoraX.Interop.Metal") :
 				OperatingSystem.IsAndroid() ? Type.GetType("RabotoraX.Interop.Vulkan.Vulkan, RabotoraX.Interop.Vulkan") 

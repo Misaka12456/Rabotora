@@ -9,7 +9,7 @@ public interface INative2DRenderContext : IDisposable
 	void BeginDraw();
 	void EndDraw();
 	void Clear(float r, float g, float b, float a);
-	
+
 	INativeTexture2D CreateTexture(Stream stream, bool leaveOpen = false);
 	INativeTexture2D CreateTexture(int width, int height, ReadOnlyMemory<byte> pixelData);
 	/// <summary>
@@ -25,6 +25,7 @@ public interface INative2DRenderContext : IDisposable
 	/// </param>
 	/// <returns>The created video texture, which should be optimized for dynamic updates and use Ignore alpha mode.</returns>
 	INativeTexture2D CreateVideoTexture(int width, int height, ReadOnlyMemory<byte>? initialData = null);
+
 	INativeTexture2D CreateEmptyTexture(int width, int height);
 	
 	INativeTextLayout CreateTextLayout(string text, string fontName, float fontSize, float maxWidth = float.MaxValue, float maxHeight = float.MaxValue);

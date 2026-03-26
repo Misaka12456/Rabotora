@@ -7,6 +7,7 @@ using RabotoraX.Core.Infrastructure;
 using RabotoraX.Core.Inputs;
 using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.Threading;
+using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core;
 
@@ -69,7 +70,7 @@ public class Rabotora : IDisposable
 		Window = INativeWindow.PlatformCreate();
 		Window.Create(width, height, title, fixedAspectRatio: fixedAspectRatio);
 
-		Graphics = INativeGraphicsAPI.PlatformDefaultCreate();
+		Graphics = INativeGraphicsAPI.Create();
 		Graphics.Initialize(Window);
 		
 		GraphicsService.Initialize(Graphics);
@@ -180,13 +181,13 @@ public class Rabotora : IDisposable
 			float currentTime = (float) _clock.Elapsed.TotalSeconds;
 			float deltaTime = currentTime - _lastTime;
 			_lastTime = currentTime;
+			
+			UIEventService.Update();
 
 			OnUpdate(deltaTime);
 			Cinema.Update(deltaTime);
-			// AudioService.Update();
 
 			Graphics.BeginFrame();
-			// Graphics.Clear(0, 0, 0, 1); // Clear to black by default, can be changed by user code in OnUpdate or stage updates
 			// Clear logic was moved to Audience.ClearConfig (3D or 3DHybrid stages) or RStage.ClearColor (2D stages) since RabotoraX v0.2.1
 
 			OnRender();

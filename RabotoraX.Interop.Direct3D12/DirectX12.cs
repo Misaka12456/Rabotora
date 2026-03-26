@@ -1,37 +1,54 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
-using System.Text;
 using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
+using RabotoraX.Interop.Direct3D11.Rendering;
 using RabotoraX.Interop.Direct3D12.Rendering;
 using TerraFX.Interop.Windows;
 using Vortice;
 using Vortice.D3DCompiler;
-using Vortice.Direct3D;
 using Vortice.Direct3D12;
 using Vortice.Direct3D12.Debug;
 using Vortice.DXGI;
 using Vortice.Mathematics;
+using Vortice.Direct3D11;
+using Vortice.Direct3D11on12;
+using Vortice.Direct2D1;
+using Vortice.DirectWrite;
 using static TerraFX.Interop.Windows.Windows;
+using IWICImagingFactory = Vortice.WIC.IWICImagingFactory;
 using BlendOperation = RabotoraX.Core.Graphics.BlendOperation;
 using BlendState = RabotoraX.Core.Graphics.BlendState;
 using CullMode = RabotoraX.Core.Graphics.CullMode;
 using InputElementDescription = RabotoraX.Core.Graphics.InputElementDescription;
 using PrimitiveTopology = RabotoraX.Core.Graphics.PrimitiveTopology;
+using Blend = Vortice.Direct3D12.Blend;
+using BlendDescription = Vortice.Direct3D12.BlendDescription;
+using ColorWriteEnable = Vortice.Direct3D12.ColorWriteEnable;
+using ComparisonFunction = Vortice.Direct3D12.ComparisonFunction;
+using FeatureLevel = Vortice.Direct3D.FeatureLevel;
+using FillMode = Vortice.Direct3D12.FillMode;
+using Filter = Vortice.Direct3D12.Filter;
+using RasterizerDescription = Vortice.Direct3D12.RasterizerDescription;
+using RenderTargetBlendDescription = Vortice.Direct3D12.RenderTargetBlendDescription;
+using RenderTargetViewDescription = Vortice.Direct3D12.RenderTargetViewDescription;
+using RenderTargetViewDimension = Vortice.Direct3D12.RenderTargetViewDimension;
+using ResourceFlags = Vortice.Direct3D12.ResourceFlags;
+using Texture2DRenderTargetView = Vortice.Direct3D12.Texture2DRenderTargetView;
+using TextureAddressMode = Vortice.Direct3D12.TextureAddressMode;
 
 namespace RabotoraX.Interop.Direct3D12;
 
 [UsedImplicitly, SupportedOSPlatform("windows")]
 [SuppressMessage("ReSharper", "ConditionalAccessQualifierIsNonNullableAccordingToAPIContract")]
 [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
+[SuppressMessage("ReSharper", "ConstantConditionalAccessQualifier")]
 public partial class DirectX12 : INativeGraphicsAPI
 {
-
-	private sealed partial class DX12SkiaContextImpl : INative2DRenderContext;
+	private sealed partial class D2DContextImpl : INative2DRenderContext;
 	
 	public string ApiName => "Direct3D 12";
 	public string DeviceName { get; private set; } = "Unknown";
@@ -74,30 +91,46 @@ public partial class DirectX12 : INativeGraphicsAPI
 	private readonly Stack<CullMode> _cullModeStack = new([CullMode.Back]);
 	private readonly Stack<BlendState> _blendStateStack = new([BlendState.AlphaBlend]);
 	private bool _depthEnabled = true;
-	private volatile bool _isRecording = false;
-	
-	private ID3D12DescriptorHeap? _srvHeap;
-	private ID3D12PipelineState? _uiBlitPso;
-	private int _srvDescriptorSize;
-	
+	private volatile bool _isRecording;
+
 	private readonly Dictionary<string, ID3D12PipelineState> _psoCache = [];
-	private DX12SkiaContextImpl? _skiaImpl;
+	
+	
+	private ID3D11Device5? _d3d11Device;
+	internal ID3D11DeviceContext4? _d3d11Context;
+	internal ID3D11On12Device2? _d3d11On12Device;
+	private ID2D1Factory8? _d2dFactory;
+	protected ID2D1Device7? _d2dDevice;
+	internal ID2D1DeviceContext7? _d2dContext;
+	internal IDWriteFactory8? _dwriteFactory;
+	internal IWICImagingFactory? _wicFactory;
+	
+	internal ID3D11Resource? _wrappedBackBuffer;
+	internal ID2D1Bitmap1? _d2dTargetBitmap;
+	private D2DContextImpl? _d2dImpl;
 	
 	public void Initialize(INativeWindow window)
 	{
 		if (IsInitialized) throw new InvalidOperationException("Graphics API is already initialized.");
 
 		FramebufferSize = window.Size;
+		CreateD3D12(window);
+		CreateResources(window.Size.Width, window.Size.Height);
+		CreateD2D11On12();
+		
+#if DEBUG
+		Console.WriteLine($"Initialized Graphics API Backend as {ApiName} on device {DeviceName}");
+#endif
+		IsInitialized = true;
+	}
+
+	private void CreateD3D12(INativeWindow window)
+	{
 		CreateDevice();
 		CreateCommandQueue();
 		CreateSwapChain(window);
 		CreateDescriptorHeaps();
 		CreateRootSignature();
-		CreateUIResources();
-		CreateResources(window.Size.Width, window.Size.Height);
-		
-		_skiaImpl = new DX12SkiaContextImpl(this);
-		IsInitialized = true;
 	}
 
 	private void CreateDevice()
@@ -112,48 +145,6 @@ public partial class DirectX12 : INativeGraphicsAPI
 		D3D12.D3D12CreateDevice(null, FeatureLevel.Level_11_0, out _device).CheckError();
 		_deviceLuid = (Luid)_device!.AdapterLuid;
 		DeviceName = "Direct3D 12 Hardware Adapter";
-	}
-	
-	private void CreateUIResources()
-	{
-		_srvHeap = _device!.CreateDescriptorHeap(new DescriptorHeapDescription(DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView,
-			16, DescriptorHeapFlags.ShaderVisible));
-		_srvDescriptorSize = (int)_device.GetDescriptorHandleIncrementSize(DescriptorHeapType.ConstantBufferViewShaderResourceViewUnorderedAccessView);
-
-		using var shader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("RabotoraX.Interop.Direct3D12.Assets.DefaultUIShader.hlsl")!, new UTF8Encoding(false));
-		string shaderCode = shader.ReadToEnd();
-		shader.Close();
-
-		var vs = Compiler.Compile(shaderCode, "VSMain", "none", "vs_5_0");
-		var ps = Compiler.Compile(shaderCode, "PSMain", "none", "ps_5_0");
-
-		var premulBlendDesc = new BlendDescription() {AlphaToCoverageEnable = false, IndependentBlendEnable = false};
-		premulBlendDesc.RenderTarget[0] = new RenderTargetBlendDescription()
-		{
-			BlendEnable = false, // 这改成false也没用
-			SourceBlend = Blend.SourceAlpha,
-			DestinationBlend = Blend.InverseSourceAlpha, // Blend One OneMinusSrcAlpha (Premultiplied Alpha)
-			BlendOperation = Vortice.Direct3D12.BlendOperation.Add,
-			SourceBlendAlpha = Blend.One,
-			DestinationBlendAlpha = Blend.InverseSourceAlpha,
-			BlendOperationAlpha = Vortice.Direct3D12.BlendOperation.Add,
-			RenderTargetWriteMask = ColorWriteEnable.All
-		};
-
-		// Create PSO for UI Blitting (Fullscreen Quad by A Big Triangle)
-		var psoDesc = new GraphicsPipelineStateDescription()
-		{
-			RootSignature = _globalRootSignature,
-			VertexShader = vs,
-			PixelShader = ps,
-			RasterizerState = RasterizerDescription.CullNone,
-			BlendState = premulBlendDesc,
-			DepthStencilState = DepthStencilDescription.None,
-			PrimitiveTopologyType = PrimitiveTopologyType.Triangle,
-			RenderTargetFormats = [Format.B8G8R8A8_UNorm_SRgb],
-			SampleDescription = new SampleDescription(1, 0)
-		};
-		_uiBlitPso = _device.CreateGraphicsPipelineState(psoDesc);
 	}
 
 	private void CreateCommandQueue()
@@ -233,14 +224,14 @@ public partial class DirectX12 : INativeGraphicsAPI
 		_ = D3D12.D3D12SerializeVersionedRootSignature(new VersionedRootSignatureDescription(desc), out var blob);
 		_globalRootSignature = _device!.CreateRootSignature(blob);
 	}
-
+	
 	private void CreateResources(int width, int height)
 	{
 		var rtvHandleStart = _rtvHeap!.GetCPUDescriptorHandleForHeapStart();
     
 		var rtvDesc = new RenderTargetViewDescription()
 		{
-			Format = Format.B8G8R8A8_UNorm_SRgb,
+			Format = Format.B8G8R8A8_UNorm,
 			ViewDimension = RenderTargetViewDimension.Texture2D,
 			Texture2D = new Texture2DRenderTargetView() { MipSlice = 0, PlaneSlice = 0 }
 		};
@@ -260,6 +251,49 @@ public partial class DirectX12 : INativeGraphicsAPI
 		var clearValue = new ClearValue(Format.D24_UNorm_S8_UInt, new DepthStencilValue(1.0f));
 		_depthBuffer = _device!.CreateCommittedResource(new HeapProperties(HeapType.Default), HeapFlags.None, depthDesc, ResourceStates.DepthWrite, clearValue);
 		_device.CreateDepthStencilView(_depthBuffer, null, _dsvHeap!.GetCPUDescriptorHandleForHeapStart());
+		if (_d2dContext != null)
+		{
+			BindD2DTarget();
+		}
+	}
+
+	private void CreateD2D11On12()
+	{
+		Apis.D3D11On12CreateDevice(_device!, DeviceCreationFlags.BgraSupport, [FeatureLevel.Level_11_0], [_commandQueue!], 0,
+			out var tempD3D11Device, out var tempD3D11Context, out _).CheckError();
+		
+		_d3d11Device = tempD3D11Device.QueryInterface<ID3D11Device5>();
+		_d3d11Context = tempD3D11Context.QueryInterface<ID3D11DeviceContext4>();
+		_d3d11On12Device = _d3d11Device.QueryInterface<ID3D11On12Device2>();
+		
+		tempD3D11Device.Dispose();
+		tempD3D11Context.Dispose();
+
+		_d2dFactory = D2D1.D2D1CreateFactory<ID2D1Factory8>();
+		_dwriteFactory = DWrite.DWriteCreateFactory<IDWriteFactory8>();
+		_wicFactory = new IWICImagingFactory();
+
+		using var dxgiDevice = _d3d11Device!.QueryInterface<IDXGIDevice>();
+		_d2dDevice = _d2dFactory.CreateDevice(dxgiDevice);
+		_d2dContext = _d2dDevice.CreateDeviceContext(DeviceContextOptions.None);
+		_d2dContext.UnitMode = UnitMode.Pixels;
+		_d2dContext.SetDpi(96, 96);
+		
+		BindD2DTarget();
+		
+		_d2dImpl = new D2DContextImpl(this);
+	}
+
+	private void BindD2DTarget()
+	{
+		var d3d11Flags = new Vortice.Direct3D11on12.ResourceFlags() { BindFlags = BindFlags.RenderTarget };
+		_d3d11On12Device!.CreateWrappedResource(MainRenderTexture!.Resource, d3d11Flags, ResourceStates.RenderTarget,
+			ResourceStates.RenderTarget, out _wrappedBackBuffer).CheckError();
+
+		using var surface = _wrappedBackBuffer!.QueryInterface<IDXGISurface>();
+		var props = new BitmapProperties1(new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied), 96, 96, BitmapOptions.Target | BitmapOptions.CannotDraw);
+		_d2dTargetBitmap = _d2dContext!.CreateBitmapFromDxgiSurface(surface, props);
+		_d2dContext.Target = _d2dTargetBitmap;
 	}
 
 	public void Resize(int width, int height)
@@ -288,6 +322,11 @@ public partial class DirectX12 : INativeGraphicsAPI
 
 		WaitIdle();
 
+		_d2dContext!.Target = null;
+		_d2dTargetBitmap?.Dispose();
+		_wrappedBackBuffer?.Dispose();
+		_d3d11Context!.Flush();
+
 		FramebufferSize = (width, height);
 
 		foreach (var buffer in _backBuffers)
@@ -313,7 +352,6 @@ public partial class DirectX12 : INativeGraphicsAPI
 		_frameIndex = (int)_swapChain.CurrentBackBufferIndex;
 		
 		CreateResources(width, height);
-		_skiaImpl?.Resize(width, height);
 	}
 
 	public void BeginFrame()
@@ -462,7 +500,7 @@ public partial class DirectX12 : INativeGraphicsAPI
 		if (width <= 0) width = 1;
 		if (height <= 0) height = 1;
 
-		var desc = ResourceDescription.Texture2D(Format.B8G8R8A8_UNorm_SRgb, (uint)width, (uint)height);
+		var desc = ResourceDescription.Texture2D(Format.B8G8R8A8_UNorm, (uint)width, (uint)height);
     
 		var initialState = pixelData.IsEmpty ? ResourceStates.PixelShaderResource : ResourceStates.CopyDest;
     
@@ -479,62 +517,72 @@ public partial class DirectX12 : INativeGraphicsAPI
 	
 	public unsafe void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0)
 	{
-		if (texture is not DX12Texture2D dxTex) return;
-
-		int rowPitch = stride > 0 ? stride : dxTex.Width * 4;
-		int alignedRowPitch = (rowPitch + 255) & ~255; 
-		int slicePitch = alignedRowPitch * dxTex.Height;
-
-		if (slicePitch <= 0) return;
-
-		var uploadResource = _device!.CreateCommittedResource(new HeapProperties(HeapType.Upload), HeapFlags.None, ResourceDescription.Buffer((ulong)slicePitch), ResourceStates.GenericRead);
-
-		void* pMappedData = null;
-		var res = uploadResource.Map(0, null, &pMappedData);
-		if (res.Success && pMappedData != null)
+		if (texture is D2DTexture d2dTex)
 		{
-			byte* pDstBase = (byte*)pMappedData;
-			fixed (byte* pSrc = pixelData)
+			int rowPitch = stride > 0 ? stride : d2dTex.Width * 4;
+			fixed (void* pData = pixelData)
 			{
-				for (int y = 0; y < dxTex.Height; y++)
-				{
-					byte* pDstRow = pDstBase + y * alignedRowPitch;
-					void* pSrcRow = pSrc + y * rowPitch;
-					
-					Unsafe.CopyBlock(pDstRow, pSrcRow, (uint)rowPitch);
-					Unsafe.InitBlock(pDstRow + rowPitch, 0, (uint)(alignedRowPitch - rowPitch));
-				}
+				d2dTex.Bitmap.CopyFromMemory((nint)pData, (uint)rowPitch);
 			}
 		}
-		uploadResource.Unmap(0);
-
-		var cmdAlloc = _device.CreateCommandAllocator(CommandListType.Direct);
-		var cmdList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, cmdAlloc);
-
-		var dstLoc = new TextureCopyLocation(dxTex.Resource);
-		var srcLoc = new TextureCopyLocation(uploadResource, new PlacedSubresourceFootPrint()
+		else if (texture is DX12Texture2D dxTex)
 		{
-			Offset = 0,
-			Footprint = new SubresourceFootPrint()
+			int rowPitch = stride > 0 ? stride : dxTex.Width * 4;
+			int alignedRowPitch = (rowPitch + 255) & ~255;
+			int slicePitch = alignedRowPitch * dxTex.Height;
+
+			if (slicePitch <= 0) return;
+
+			var uploadResource = _device!.CreateCommittedResource(new HeapProperties(HeapType.Upload), HeapFlags.None, ResourceDescription.Buffer((ulong) slicePitch), ResourceStates.GenericRead);
+
+			void* pMappedData = null;
+			var res = uploadResource.Map(0, null, &pMappedData);
+			if (res.Success && pMappedData != null)
 			{
-				Format = Format.B8G8R8A8_UNorm,
-				Width = (uint)dxTex.Width,
-				Height = (uint)dxTex.Height,
-				Depth = 1,
-				RowPitch = (uint)alignedRowPitch
+				byte* pDstBase = (byte*) pMappedData;
+				fixed (byte* pSrc = pixelData)
+				{
+					for (int y = 0; y < dxTex.Height; y++)
+					{
+						byte* pDstRow = pDstBase + y * alignedRowPitch;
+						void* pSrcRow = pSrc + y * rowPitch;
+
+						Unsafe.CopyBlock(pDstRow, pSrcRow, (uint) rowPitch);
+						Unsafe.InitBlock(pDstRow + rowPitch, 0, (uint) (alignedRowPitch - rowPitch));
+					}
+				}
 			}
-		});
 
-		cmdList.CopyTextureRegion(dstLoc, 0, 0, 0, srcLoc);
-		cmdList.ResourceBarrierTransition(dxTex.Resource, ResourceStates.CopyDest, ResourceStates.PixelShaderResource);
-		cmdList.Close();
+			uploadResource.Unmap(0);
 
-		_commandQueue!.ExecuteCommandList(cmdList);
-		WaitIdle();
+			var cmdAlloc = _device.CreateCommandAllocator(CommandListType.Direct);
+			var cmdList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, cmdAlloc);
 
-		cmdList.Dispose();
-		cmdAlloc.Dispose();
-		uploadResource.Dispose();
+			var dstLoc = new TextureCopyLocation(dxTex.Resource);
+			var srcLoc = new TextureCopyLocation(uploadResource, new PlacedSubresourceFootPrint()
+			{
+				Offset = 0,
+				Footprint = new SubresourceFootPrint()
+				{
+					Format = Format.B8G8R8A8_UNorm,
+					Width = (uint) dxTex.Width,
+					Height = (uint) dxTex.Height,
+					Depth = 1,
+					RowPitch = (uint) alignedRowPitch
+				}
+			});
+
+			cmdList.CopyTextureRegion(dstLoc, 0, 0, 0, srcLoc);
+			cmdList.ResourceBarrierTransition(dxTex.Resource, ResourceStates.CopyDest, ResourceStates.PixelShaderResource);
+			cmdList.Close();
+
+			_commandQueue!.ExecuteCommandList(cmdList);
+			WaitIdle();
+
+			cmdList.Dispose();
+			cmdAlloc.Dispose();
+			uploadResource.Dispose();
+		}
 	}
 	
 	public INativeRenderTexture CreateRenderTexture(int width, int height)
@@ -740,13 +788,12 @@ public partial class DirectX12 : INativeGraphicsAPI
 
 	public INative2DRenderContext? Get2DContext()
 	{
-		return _skiaImpl;
+		return _d2dImpl;
 	}
 
 	public void Dispose()
 	{
 		WaitIdle();
-		_skiaImpl?.Dispose();
 		_commandQueue?.Dispose();
 		_commandAllocator?.Dispose();
 		CommandList?.Dispose();

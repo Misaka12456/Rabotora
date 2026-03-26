@@ -60,12 +60,21 @@ public unsafe class RawInputBackend : INativeInput
 
 	public void Update()
 	{
-		var newPos = MousePosition + _tempMouseDelta;
-		_mouse.AdvanceFrame((int)newPos.X, (int)newPos.Y);
+		POINT p;
+		if (GetCursorPos(&p))
+		{
+			ScreenToClient((HWND)_hwnd, &p);
+			_mouse.AdvanceFrame(p.x, p.y);
+		}
+		else
+		{
+			var newPos = MousePosition + _tempMouseDelta;
+			_mouse.AdvanceFrame((int)newPos.X, (int)newPos.Y);
+		}
+		
 		_keyboard.AdvanceFrame();
 		MouseDelta = _tempMouseDelta;
 		_tempMouseDelta = Vector2.Zero;
-		
 		AnyKeyDown = CheckAnyKeyDown();
 	}
 

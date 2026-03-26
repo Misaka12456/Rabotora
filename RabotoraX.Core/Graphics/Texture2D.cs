@@ -79,6 +79,16 @@ public class Texture2D : Object
 		_nativeTexture = context2D.CreateVideoTexture(width, height, data);
 	}
 
+	public void CreateEmpty2DForVideo(int width, int height, GpuFormat format)
+	{
+		DisposeNativeTexture();
+        
+		var context2D = GraphicsService.API.Get2DContext() 
+		                ?? throw new InvalidOperationException("No 2D context available.");
+		
+		_nativeTexture = context2D.CreateVideoTexture(width, height);
+	}
+	
 	public void LoadImage(byte[] data)
 	{
 		LoadImage(new MemoryStream(data));

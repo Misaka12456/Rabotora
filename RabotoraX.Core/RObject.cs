@@ -87,6 +87,42 @@ public sealed class RObject : Object
 		
 		return null;
 	}
+	
+	public T? GetComponentInParent<T>() where T : Component
+	{
+		foreach (var component in _components)
+		{
+			if (component is T tComponent)
+			{
+				return tComponent;
+			}
+		}
+		
+		if (Layout.Parent != null)
+		{
+			return Layout.Parent.RObject.GetComponentInParent<T>();
+		}
+		
+		return null;
+	}
+	
+	public bool TryGetComponent<T>(out T? component) where T : Component
+	{
+		component = GetComponent<T>();
+		return component != null;
+	}
+	
+	public bool TryGetComponentInChildren<T>(out T? component) where T : Component
+	{
+		component = GetComponentInChildren<T>();
+		return component != null;
+	}
+	
+	public bool TryGetComponentInParent<T>(out T? component) where T : Component
+	{
+		component = GetComponentInParent<T>();
+		return component != null;
+	}
 
 	internal void Update(float deltaTime)
 	{

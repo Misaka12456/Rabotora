@@ -6,55 +6,56 @@ namespace RabotoraX.Core.UI;
 /// <summary>
 /// Represents a component that can render text in a 2D UI stage.
 /// </summary>
-public class Text : Component2D
+public class Text : UIRenderable
 {
+	public override Texture2D? Texture { get; set; } = null;
+	public override float Opacity { get; set; } = 1.0f;
+	public override INativeShader? CustomShader { get; set; }
+
 	public string Content
 	{
-		get => _content;
+		get;
 		set
 		{
-			if (_content != value)
+			if (field != value)
 			{
-				_content = value;
+				field = value;
 				_isDirty = true;
 			}
 		}
-	}
+	} = string.Empty;
 
 	public string FontName
 	{
-		get => _fontName;
+		get;
 		set
 		{
-			if (_fontName != value)
+			if (field != value)
 			{
-				_fontName = value;
+				field = value;
 				_isDirty = true;
 			}
 		}
-	}
+	} = "Microsoft YaHei";
 
 	public float FontSize
 	{
-		get => _fontSize;
+		get;
 		set
 		{
-			if (Math.Abs(_fontSize - value) > 0.01f)
+			if (Math.Abs(field - value) > 0.01f)
 			{
-				_fontSize = value;
+				field = value;
 				_isDirty = true;
 			}
 		}
-	}
-	
-	public Vector4 Color { get; set; } = new(0, 0, 0, 1); // black
-	
-	private string _content = string.Empty;
-	private string _fontName = "Microsoft YaHei";
-	private float _fontSize = 24.0f;
+	} = 24.0f;
+
+	public Color Color { get; set; } = Color.Black;
 	
 	private INativeTextLayout? _cachedLayout;
 	private bool _isDirty = true;
+
 
 	public override void OnRender2D(INative2DRenderContext context)
 	{
@@ -69,12 +70,21 @@ public class Text : Component2D
 		
 		context.SetTransform(GetCanvasWorldMatrix());
 		
-		context.DrawTextLayout(_cachedLayout, 0, 0, Color.X, Color.Y, Color.Z, Color.W);
+		context.DrawTextLayout(_cachedLayout, 0, 0, Color.R, Color.G, Color.B, Color.A * Opacity);
+	}
+
+	protected override void Render(INative2DRenderContext context)
+	{
+		// Do nothing here since we're handling rendering in OnRender2D
 	}
 
 	protected override void Dispose(bool disposing)
 	{
-		_cachedLayout?.Dispose();
-		_cachedLayout = null;
+		if (disposing)
+		{
+			_cachedLayout?.Dispose();
+			_cachedLayout = null;
+		}
+		base.Dispose(disposing);
 	}
 }

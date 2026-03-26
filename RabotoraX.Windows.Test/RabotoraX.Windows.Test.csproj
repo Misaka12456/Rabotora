@@ -12,6 +12,7 @@
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <PublishAot>true</PublishAot>
         <ImportWindowsDesktopTargets>false</ImportWindowsDesktopTargets>
+        <ApplicationManifest>App.manifest</ApplicationManifest>
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\RabotoraX.Core\RabotoraX.Core.csproj" />
