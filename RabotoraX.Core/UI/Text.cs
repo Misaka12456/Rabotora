@@ -20,7 +20,7 @@ public class Text : UIRenderable
 			if (field != value)
 			{
 				field = value;
-				_isDirty = true;
+				Invalidate();
 			}
 		}
 	} = string.Empty;
@@ -33,7 +33,7 @@ public class Text : UIRenderable
 			if (field != value)
 			{
 				field = value;
-				_isDirty = true;
+				Invalidate();
 			}
 		}
 	} = "Microsoft YaHei";
@@ -46,31 +46,50 @@ public class Text : UIRenderable
 			if (Math.Abs(field - value) > 0.01f)
 			{
 				field = value;
-				_isDirty = true;
+				Invalidate();
 			}
 		}
 	} = 24.0f;
 
 	public Color Color { get; set; } = Color.Black;
-	
+
+	public override float PreferredWidth => GetLayout().Size.X;
+	public override float PreferredHeight => GetLayout().Size.Y;
+
 	private INativeTextLayout? _cachedLayout;
 	private bool _isDirty = true;
+
+	private INativeTextLayout GetLayout()
+	{
+		if (_isDirty || _cachedLayout == null)
+		{
+			_cachedLayout?.Dispose();
+			_cachedLayout = RUIService.TextFactory.CreateTextLayout(Content, FontName, FontSize);
+			_isDirty = false;
+		}
+
+		return _cachedLayout!;
+	}
+
+	private void Invalidate()
+	{
+		_isDirty = true;
+		if (Layout is RUILayout layout)
+		{
+			layout.RequestLayout();
+		}
+	}
 
 
 	public override void OnRender2D(INative2DRenderContext context)
 	{
 		if (string.IsNullOrEmpty(Content)) return;
 
-		if (_isDirty || _cachedLayout == null)
-		{
-			_cachedLayout?.Dispose();
-			_cachedLayout = context.CreateTextLayout(Content, FontName, FontSize);
-			_isDirty = false;
-		}
+		GetLayout(); // this will refresh the cached layout if needed
 		
 		context.SetTransform(GetCanvasWorldMatrix());
 		
-		context.DrawTextLayout(_cachedLayout, 0, 0, Color.R, Color.G, Color.B, Color.A * Opacity);
+		context.DrawTextLayout(_cachedLayout!, 0, 0, Color.R, Color.G, Color.B, Color.A * Opacity);
 	}
 
 	protected override void Render(INative2DRenderContext context)

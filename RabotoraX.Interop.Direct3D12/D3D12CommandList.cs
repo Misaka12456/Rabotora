@@ -117,7 +117,7 @@ public sealed class D3D12CommandList : INativeCommandList
 
 	public void SetShader(INativeShader shader)
 	{
-		Enqueue(() => _api._currentShader = shader);
+		Enqueue(() => _api.ApplySetShader(shader));
 	}
 
 	public void SetVertexBuffer(IGpuBuffer buffer, int stride, int offset = 0)

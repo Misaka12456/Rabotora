@@ -11,6 +11,8 @@ public class Image : UIRenderable
 	}
 	public override float Opacity { get; set; } = 1.0f;
 	public override INativeShader? CustomShader { get; set; }
+	public override float PreferredWidth => Sprite?.SourceRect.Width ?? 0;
+	public override float PreferredHeight => Sprite?.SourceRect.Height ?? 0;
 
 	public Sprite? Sprite { get; set; }
 

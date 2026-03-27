@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
+using RabotoraX.Core.UI;
 using RabotoraX.Interop.Direct3D11.Rendering;
 using RabotoraX.Interop.Direct3D12.Rendering;
 using TerraFX.Interop.Windows;
@@ -66,7 +67,8 @@ public partial class DirectX12 : INativeGraphicsAPI
 	private ID3D12Device? _device;
 	private ID3D12CommandQueue? _commandQueue;
 	internal ID3D12GraphicsCommandList? CommandList { get; private set; }
-	private ID3D12CommandAllocator? _commandAllocator;
+	private ID3D12GraphicsCommandList? _copyCommandList;
+	private ID3D12CommandAllocator? _commandAllocator, _copyAllocator;
 	private IDXGISwapChain3? _swapChain;
 	
 	private readonly ID3D12Resource[] _backBuffers = new ID3D12Resource[3];
@@ -83,7 +85,9 @@ public partial class DirectX12 : INativeGraphicsAPI
 	private nint _frameWaitableObject;
 	
 	internal INativeRenderTexture? _currentRenderTarget;
-	internal INativeShader? _currentShader;
+	// internal INativeShader? _currentShader;
+	internal DX12ShaderProgram? _currentShaderProgram;
+	internal DX12Shader? _currentVS, _currentPS;
 	internal DX12Buffer? _currentVBuffer, _currentIBuffer;
 	internal int _currentVStride, _currentVOffset;
 	internal PrimitiveTopology _currentTopology = PrimitiveTopology.TriangleList;
@@ -108,6 +112,9 @@ public partial class DirectX12 : INativeGraphicsAPI
 	internal ID3D11Resource? _wrappedBackBuffer;
 	internal ID2D1Bitmap1? _d2dTargetBitmap;
 	private D2DContextImpl? _d2dImpl;
+	
+	private int _pendingWidth, _pendingHeight;
+	private bool _resizePending;
 	
 	public void Initialize(INativeWindow window)
 	{
@@ -155,6 +162,10 @@ public partial class DirectX12 : INativeGraphicsAPI
 		CommandList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, _commandAllocator);
 		CommandList.Close(); // Close before start; BeginFrame will reset this
 
+		_copyAllocator = _device.CreateCommandAllocator(CommandListType.Direct);
+		_copyCommandList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, _copyAllocator);
+		_copyCommandList.Close();
+
 		_fence = _device.CreateFence();
 		_fenceValue = 1;
 	}
@@ -173,6 +184,7 @@ public partial class DirectX12 : INativeGraphicsAPI
 			Height = (uint) window.Size.Height,
 			Format = Format.B8G8R8A8_UNorm,
 			AlphaMode = AlphaMode.Ignore,
+			Scaling = Scaling.None,
 			BufferUsage = Usage.RenderTargetOutput,
 			SwapEffect = SwapEffect.FlipDiscard,
 			SampleDescription = new SampleDescription(1, 0),
@@ -271,6 +283,7 @@ public partial class DirectX12 : INativeGraphicsAPI
 
 		_d2dFactory = D2D1.D2D1CreateFactory<ID2D1Factory8>();
 		_dwriteFactory = DWrite.DWriteCreateFactory<IDWriteFactory8>();
+		RUIService.Initialize(this); // Initialize text factory for RUI rendering
 		_wicFactory = new IWICImagingFactory();
 
 		using var dxgiDevice = _d3d11Device!.QueryInterface<IDXGIDevice>();
@@ -298,13 +311,21 @@ public partial class DirectX12 : INativeGraphicsAPI
 
 	public void Resize(int width, int height)
 	{
+		lock (RenderLock)
+		{
+			_pendingWidth = width;
+			_pendingHeight = height;
+			_resizePending = true;
+		}
 		if (!MultiThreadService.IsRenderThread)
 		{
 			MultiThreadService.Invoke(() =>
 			{
 				lock (RenderLock)
 				{
-					ResizeInternal(width, height);
+					if (!_resizePending) return;
+					_resizePending = false;
+					ResizeInternal(_pendingWidth, _pendingHeight);
 				}
 			});
 			return;
@@ -312,7 +333,9 @@ public partial class DirectX12 : INativeGraphicsAPI
     
 		lock (RenderLock)
 		{
-			ResizeInternal(width, height);
+			if (!_resizePending) return;
+			_resizePending = false;
+			ResizeInternal(_pendingWidth, _pendingHeight);
 		}
 	}
 
@@ -386,23 +409,29 @@ public partial class DirectX12 : INativeGraphicsAPI
 			}
 			return;
 		}
+
+		if (_isRecording)
+		{
+			CommandList!.Close();
+			_commandQueue!.ExecuteCommandList(CommandList);
+			_isRecording = false;
+		}
 		
 		var backBuffer = _backBuffers[_frameIndex];
 		
-		CommandList!.ResourceBarrierTransition(MainRenderTexture!.Resource, ResourceStates.RenderTarget, ResourceStates.CopySource);
-		CommandList.ResourceBarrierTransition(backBuffer, ResourceStates.Present, ResourceStates.CopyDest);
+		_copyAllocator!.Reset();
+		_copyCommandList!.Reset(_copyAllocator, null);
 		
-		CommandList.CopyResource(backBuffer, MainRenderTexture.Resource);
+		_copyCommandList!.ResourceBarrierTransition(MainRenderTexture!.Resource, ResourceStates.RenderTarget, ResourceStates.CopySource);
+		_copyCommandList.ResourceBarrierTransition(backBuffer, ResourceStates.Present, ResourceStates.CopyDest);
 		
-		CommandList.ResourceBarrierTransition(backBuffer, ResourceStates.CopyDest, ResourceStates.Present);
-		CommandList.ResourceBarrierTransition(MainRenderTexture.Resource, ResourceStates.CopySource, ResourceStates.RenderTarget);
+		_copyCommandList.CopyResource(backBuffer, MainRenderTexture.Resource);
 		
-		if (_isRecording)
-		{
-			CommandList.Close();
-			_isRecording = false;
-		}
-		_commandQueue!.ExecuteCommandList(CommandList);
+		_copyCommandList.ResourceBarrierTransition(backBuffer, ResourceStates.CopyDest, ResourceStates.Present);
+		_copyCommandList.ResourceBarrierTransition(MainRenderTexture.Resource, ResourceStates.CopySource, ResourceStates.RenderTarget);
+		
+		_copyCommandList.Close();
+		_commandQueue!.ExecuteCommandList(_copyCommandList);
 
 		_swapChain!.Present(vsync ? 1u : 0u, PresentFlags.None); // we don't CheckError here because some drivers may return an error code when the window is minimized, which we want to ignore
 		
@@ -426,6 +455,13 @@ public partial class DirectX12 : INativeGraphicsAPI
 		if (commandList is D3D12CommandList dx12List)
 		{
 			dx12List.Execute();
+		}
+
+		if (_isRecording)
+		{
+			CommandList!.Close();
+			_commandQueue!.ExecuteCommandList(CommandList);
+			_isRecording = false; // Mark current command list as not recording since it's already executed
 		}
 	}
 	
@@ -715,6 +751,32 @@ public partial class DirectX12 : INativeGraphicsAPI
 		_depthEnabled = enabled;
 	}
 
+	internal void ApplySetShader(INativeShader shader)
+	{
+		if (shader is DX12ShaderProgram program)
+		{
+			_currentShaderProgram = program;
+			_currentVS = null;
+			_currentPS = null;
+		}
+		else if (shader is DX12Shader dxShader)
+		{
+			_currentShaderProgram = null;
+			if (dxShader.Type == ShaderType.VertexShader)
+			{
+				_currentVS = dxShader;
+			}
+			else if (dxShader.Type == ShaderType.FragmentShader)
+			{
+				_currentPS = dxShader;
+			}
+			else
+			{
+				throw new InvalidOperationException("Unsupported shader type.");
+			}
+		}
+	}
+
 	private void PrepareDrawState(PrimitiveTopology topology)
 	{
 		CommandList!.IASetPrimitiveTopology(topology switch
@@ -733,19 +795,29 @@ public partial class DirectX12 : INativeGraphicsAPI
 			CommandList.IASetIndexBuffer(new IndexBufferView(_currentIBuffer.Resource.GPUVirtualAddress, (uint)_currentIBuffer.SizeInBytes, Format.R32_UInt)); // Assuming both R32
 		}
 
-		if (_currentShader is DX12ShaderProgram program)
+		if (_currentShaderProgram != null)
 		{
-			string hash = $"{program.GetHashCode()}_{_blendStateStack.Peek().GetHashCode()}_{_cullModeStack.Peek()}_{_depthEnabled}_{topology}";
+			string hash = $"{_currentShaderProgram.GetHashCode()}_{_blendStateStack.Peek().GetHashCode()}_{_cullModeStack.Peek()}_{_depthEnabled}_{topology}";
 			if (!_psoCache.TryGetValue(hash, out var pso))
 			{
-				pso = CreatePipelineState(program, topology);
+				pso = CreatePipelineState(_currentShaderProgram.VSByteCode, _currentShaderProgram.PSByteCode, _currentShaderProgram.InputElements, topology);
+				_psoCache[hash] = pso;
+			}
+			CommandList.SetPipelineState(pso);
+		}
+		else if (_currentVS != null && _currentPS != null)
+		{
+			string hash = $"{_currentVS.GetHashCode()}_{_currentPS.GetHashCode()}_{_blendStateStack.Peek().GetHashCode()}_{_cullModeStack.Peek()}_{_depthEnabled}_{topology}";
+			if (!_psoCache.TryGetValue(hash, out var pso))
+			{
+				pso = CreatePipelineState(_currentVS.ByteCode, _currentPS.ByteCode, _currentVS.InputElements, topology);
 				_psoCache[hash] = pso;
 			}
 			CommandList.SetPipelineState(pso);
 		}
 	}
 
-	private ID3D12PipelineState CreatePipelineState(DX12ShaderProgram shader, PrimitiveTopology topology)
+	private ID3D12PipelineState CreatePipelineState(byte[] vsByteCode, byte[] psByteCode, Vortice.Direct3D12.InputElementDescription[]? inputElements, PrimitiveTopology topology)
 	{
 		var blend = _blendStateStack.Peek();
 		var cull = _cullModeStack.Peek();
@@ -753,9 +825,9 @@ public partial class DirectX12 : INativeGraphicsAPI
 		var desc = new GraphicsPipelineStateDescription()
 		{
 			RootSignature = _globalRootSignature,
-			VertexShader = shader.VSByteCode,
-			PixelShader = shader.PSByteCode,
-			InputLayout = new InputLayoutDescription(shader.InputElements),
+			VertexShader = vsByteCode,
+			PixelShader = psByteCode,
+			InputLayout = inputElements != null ? new InputLayoutDescription(inputElements) : new InputLayoutDescription(),
 			RasterizerState = new RasterizerDescription(cull switch
 			{
 				CullMode.Back => Vortice.Direct3D12.CullMode.Back,
@@ -794,14 +866,31 @@ public partial class DirectX12 : INativeGraphicsAPI
 	public void Dispose()
 	{
 		WaitIdle();
+		RUIService.Dispose();
+		_wicFactory?.Dispose();
+		_dwriteFactory?.Dispose();
+		_d2dFactory?.Dispose();
+		_d2dContext?.Dispose();
+		_d2dImpl?.Dispose();
+		_d2dDevice?.Dispose();
+		foreach (var format in _textFormatCache.Values)
+		{
+			format.Dispose();
+		}
+		_textFormatCache.Clear();
+		
 		_commandQueue?.Dispose();
 		_commandAllocator?.Dispose();
 		CommandList?.Dispose();
+		_copyCommandList?.Dispose();
+		_copyAllocator?.Dispose();
 		_swapChain?.Dispose();
 		_rtvHeap?.Dispose();
 		_dsvHeap?.Dispose();
 		_depthBuffer?.Dispose();
 		_device?.Dispose();
+
+		IsInitialized = false;
 		GC.SuppressFinalize(this);
 	}
 

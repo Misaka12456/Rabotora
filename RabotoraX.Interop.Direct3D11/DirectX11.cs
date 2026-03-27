@@ -7,6 +7,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Threading;
+using RabotoraX.Core.UI;
 using RabotoraX.Core.Utility;
 using RabotoraX.Interop.Direct3D11.Rendering;
 using TerraFX.Interop.Windows;
@@ -72,6 +73,9 @@ public partial class DirectX11 : INativeGraphicsAPI
 	private D2DContextImpl? _d2dImpl;
 	private IWICImagingFactory? _wicFactory;
 	private nint _frameWaitableObject;
+
+	private int _pendingWidth, _pendingHeight;
+	private bool _resizePending;
 
 	private partial class D2DContextImpl : INative2DRenderContext;
 
@@ -148,7 +152,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 			SampleDescription = new SampleDescription(1, 0),
 			BufferUsage = Usage.RenderTargetOutput,
 			BufferCount = 3,
-			Scaling = Scaling.Stretch,
+			Scaling = Scaling.None,
 			SwapEffect = SwapEffect.FlipDiscard, // 必须是 Flip 模式
 			AlphaMode = Vortice.DXGI.AlphaMode.Ignore,
 			// 关键：开启内核等待对象标志，这是解决 CPU 空转的“银弹”
@@ -249,6 +253,7 @@ public partial class DirectX11 : INativeGraphicsAPI
 	{
 		_d2dFactory = D2D1.D2D1CreateFactory<ID2D1Factory1>();
 		_dwriteFactory = DWrite.DWriteCreateFactory<IDWriteFactory>();
+		RUIService.Initialize(this); // Initialize text factory for UI system
 		_wicFactory = new IWICImagingFactory();
 		
 		using var dxgiDevice = _device!.QueryInterface<IDXGIDevice>();
@@ -296,16 +301,23 @@ public partial class DirectX11 : INativeGraphicsAPI
 		_context?.Flush();
 	}
 
-	// DirectX11.cs
 	public void Resize(int width, int height)
 	{
+		lock (RenderLock)
+		{
+			_pendingWidth = width;
+			_pendingHeight = height;
+			_resizePending = true;
+		}
 		if (!MultiThreadService.IsRenderThread)
 		{
 			MultiThreadService.Invoke(() =>
 			{
 				lock (RenderLock)
 				{
-					ResizeInternal(width, height);
+					if (!_resizePending) return;
+					_resizePending = false;
+					ResizeInternal(_pendingWidth, _pendingHeight);
 				}
 			});
 			return;
@@ -313,7 +325,9 @@ public partial class DirectX11 : INativeGraphicsAPI
     
 		lock (RenderLock)
 		{
-			ResizeInternal(width, height);
+			if (!_resizePending) return;
+			_resizePending = false;
+			ResizeInternal(_pendingWidth, _pendingHeight);
 		}
 	}
 
@@ -684,12 +698,18 @@ public partial class DirectX11 : INativeGraphicsAPI
 	public void Dispose()
 	{
 		ReleaseResources();
+		RUIService.Dispose();
 		_wicFactory?.Dispose();
 		_dwriteFactory?.Dispose();
 		_d2dFactory?.Dispose();
 		_d2dContext?.Dispose();
 		_d2dImpl?.Dispose();
 		_d2dDevice?.Dispose();
+		foreach (var format in _textFormatCache.Values)
+		{
+			format.Dispose();
+		}
+		_textFormatCache.Clear();
 		
 		_swapChain?.Dispose();
 		_context?.Dispose();

@@ -24,7 +24,7 @@ public static class Program
 	{
 		using var app = new Rabotora("Example Presentation", 1280, 720, new Fractional(16, 9));
 
-		return app.Run(Example2DGoLiveStage2());
+		return app.Run(Example3DHybridStage());
 	}
 
 	private static RStage Example3DStage()
@@ -90,6 +90,10 @@ public static class Program
 		text.Content = "RabotoraX 3D Hybrid (3D + 2D) Stage 示例\nRabotoraX 3D Hybrid (3D + 2D) Stage Example";
 		text.Color = Color.White;
 		text.Layout.SetParent(canvasObj.Layout);
+		((RUILayout)text.Layout).AnchorMin = ((RUILayout) text.Layout).AnchorMax = new Vector2(0.5f, 0.5f);
+		((RUILayout)text.Layout).Pivot = new Vector2(0.5f, 0.5f);
+		((RUILayout)text.Layout).Size = new Vector2(600, 200);
+		((RUILayout)text.Layout).AnchoredPosition = Vector2.Zero;
 
 		return stage;
 	}

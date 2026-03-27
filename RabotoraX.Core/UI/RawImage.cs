@@ -14,6 +14,9 @@ public class RawImage : UIRenderable
 	
 	public Rect UVRect { get; set; } = new(0, 0, 1, 1);
 
+	public override float PreferredWidth => Texture != null ? Texture.Width * UVRect.Width : 0;
+	public override float PreferredHeight => Texture != null ? Texture.Height * UVRect.Height : 0;
+
 	protected override void Render(INative2DRenderContext context)
 	{
 		if (Texture == null) return;

@@ -170,6 +170,16 @@ public sealed class RUILayout : RLayout
         }
     }
 
+    public void RequestLayout()
+    {
+        if (_isDirty) return;
+        SetDirty();
+        if (Parent is RUILayout parent)
+        {
+            parent.RequestLayout();
+        }
+    }
+
     public override void OnUpdate(float deltaTime)
     {
         if (_isDirty) Recalculate();
