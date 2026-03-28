@@ -10,6 +10,7 @@ public sealed class InputTest : RManagedScript
 
 	public override void OnAwake()
 	{
+		base.OnAwake();
 		_text = GetComponent<Text>()!;
 	}
 

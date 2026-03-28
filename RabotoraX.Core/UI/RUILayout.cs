@@ -65,14 +65,31 @@ public sealed class RUILayout : RLayout
         }
     } = new(100, 100);
 
+    /// <summary>
+    /// The scale of the ui layout. This hides <see cref="RLayout.Scale"/> intentionally.<br />
+    /// The scaling is applied around <see cref="Pivot"/>.
+    /// </summary>
+    public new Vector2 Scale
+    {
+        get;
+        [UsedImplicitly]
+        set
+        {
+            field = value;
+            _isDirty = true;
+        }
+    } = Vector2.One;
+
     public Vector2 Size
     {
         get => new(Rect.Width, Rect.Height);
         [UsedImplicitly]
         set
         {
-            var currentSize = new Vector2(Rect.Width, Rect.Height);
-            var delta = value - currentSize;
+            var currentBaseSize = GetBaseSize();
+            var targetBaseSize = DivideByScale(value, Scale);
+            var delta = targetBaseSize - currentBaseSize;
+            
             OffsetMin -= delta * Pivot;
             OffsetMax += delta * (Vector2.One - Pivot);
             
@@ -107,10 +124,7 @@ public sealed class RUILayout : RLayout
 
     private Rect _rect = new(0, 0, 100, 100);
     private bool _isDirty = true;
-    
-    private Rect _lastParentRect = new(0, 0, -1, -1);
-    private Vector2 _lastParentPivot = new(-1, -1);
-    
+
     public void SetDirty()
     {
         _isDirty = true;
@@ -119,44 +133,39 @@ public sealed class RUILayout : RLayout
     public void Recalculate()
     {
         _isDirty = false;
-        float pivotLocalX, pivotLocalY;
+
+        var baseRect = CalculateBaseRect();
+
+        // Pivot position in screen space, before scale is applied.
+        float pivotScreenX = baseRect.X + baseRect.Width * Pivot.X;
+        float pivotScreenY = baseRect.Y + baseRect.Height * Pivot.Y;
+
+        // Apply scale around pivot.
+        float finalWidth = baseRect.Width * Scale.X;
+        float finalHeight = baseRect.Height * Scale.Y;
+
+        float finalX = pivotScreenX - finalWidth * Pivot.X;
+        float finalY = pivotScreenY - finalHeight * Pivot.Y;
+
+        _rect = new Rect(finalX, finalY, finalWidth, finalHeight);
 
         if (Parent is not RUILayout parent)
         {
-            var width = OffsetMax.X - OffsetMin.X;
-            var height = OffsetMax.Y - OffsetMin.Y;
-            
-            _rect = new Rect(OffsetMin.X, OffsetMin.Y, width, height);
-
-            pivotLocalX = _rect.X + width * Pivot.X;
-            pivotLocalY = _rect.Y + height * Pivot.Y;
-
-            float localCartesianX = pivotLocalX;
-            float localCartesianY = height - pivotLocalY;
+            // Root layout: convert screen-space pivot position to local Cartesian space.
+            // ReSharper disable once InlineTemporaryVariable
+            float localCartesianX = pivotScreenX;
+            float localCartesianY = _rect.Height - pivotScreenY;
 
             Position = new Vector3(localCartesianX, localCartesianY, 0f);
         }
         else
         {
-            var p = parent.Rect;
+            var parentRect = parent.Rect;
+            float parentPivotScreenX = parentRect.X + parentRect.Width * parent.Pivot.X;
+            float parentPivotScreenY = parentRect.Y + parentRect.Height * parent.Pivot.Y;
 
-            var anchorMinPx = new Vector2(p.Width * AnchorMin.X, p.Height * AnchorMin.Y);
-            var anchorMaxPx = new Vector2(p.Width * AnchorMax.X, p.Height * AnchorMax.Y);
-
-            var min = anchorMinPx + OffsetMin;
-            var max = anchorMaxPx + OffsetMax;
-            var size = max - min;
-
-            _rect = new Rect(min.X, min.Y, size.X, size.Y);
-
-            pivotLocalX = _rect.X + size.X * Pivot.X;
-            pivotLocalY = _rect.Y + size.Y * Pivot.Y;
-
-            float parentPivotLocalX = p.Width * parent.Pivot.X;
-            float parentPivotLocalY = p.Height * parent.Pivot.Y;
-
-            float localCartesianX = pivotLocalX - parentPivotLocalX;
-            float localCartesianY = -(pivotLocalY - parentPivotLocalY);
+            float localCartesianX = pivotScreenX - parentPivotScreenX;
+            float localCartesianY = -(pivotScreenY - parentPivotScreenY);
 
             Position = new Vector3(localCartesianX, localCartesianY, 0f);
         }
@@ -185,6 +194,44 @@ public sealed class RUILayout : RLayout
         if (_isDirty) Recalculate();
     }
 
+    private Rect CalculateBaseRect()
+    {
+        if (Parent is not RUILayout parent)
+        {
+            float width = OffsetMax.X - OffsetMin.X;
+            float height = OffsetMax.Y - OffsetMin.Y;
+
+            return new Rect(OffsetMin.X, OffsetMin.Y, width, height);
+        }
+
+        var p = parent.Rect;
+
+        var anchorMinPx = new Vector2(p.Width * AnchorMin.X, p.Height * AnchorMin.Y);
+        var anchorMaxPx = new Vector2(p.Width * AnchorMax.X, p.Height * AnchorMax.Y);
+
+        var min = anchorMinPx + OffsetMin;
+        var max = anchorMaxPx + OffsetMax;
+        var size = max - min;
+
+        return new Rect(min.X, min.Y, size.X, size.Y);
+    }
+    
+    private Vector2 GetBaseSize()
+    {
+        var r = CalculateBaseRect();
+        return new Vector2(r.Width, r.Height);
+    }
+
+    private static Vector2 DivideByScale(Vector2 size, Vector2 scale)
+    {
+        const float epsilon = 0.000001f;
+
+        float x = MathF.Abs(scale.X) < epsilon ? 0f : size.X / scale.X;
+        float y = MathF.Abs(scale.Y) < epsilon ? 0f : size.Y / scale.Y;
+
+        return new Vector2(x, y);
+    }
+    
     private Vector2 CalculateAnchoredPosition()
     {
         var r = Rect;

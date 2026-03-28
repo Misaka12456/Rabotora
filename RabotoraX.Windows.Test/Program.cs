@@ -94,46 +94,58 @@ public static class Program
 		((RUILayout)text.Layout).Pivot = new Vector2(0.5f, 0.5f);
 		((RUILayout)text.Layout).Size = new Vector2(600, 200);
 		((RUILayout)text.Layout).AnchoredPosition = Vector2.Zero;
+		text.RObject.AddComponent<MovingText>();
 
 		return stage;
 	}
 
 	private static RStage Example2DStage()
 	{
-		var stage = new RStage("Act 1: Hello RabotoraX") { Type = StageType.Render2D, ClearColor = new Vector4(0, 0, 0, 1) };
+	    var stage = new RStage("Act 1: Hello RabotoraX") { Type = StageType.Render2D, ClearColor = new Vector4(0, 0, 0, 1) };
 
-		var canvasObj = stage.CreateObject("Canvas");
-		var canvas = canvasObj.AddComponent<RCanvas>();
-		canvas.ReferenceResolution = new Vector2(1280, 720);
-		canvas.ScaleMode = CanvasScaleMode.ScaleWithScreenSize;
-		canvas.MatchMode = ScreenMatchMode.MatchWidthOrHeight;
-		canvas.MatchWidthOrHeight = 0.5f;
+	    // Canvas
+	    var canvasObj = stage.CreateObject("Canvas");
+	    var canvas = canvasObj.AddComponent<RCanvas>();
+	    canvas.ReferenceResolution = new Vector2(1280, 720);
+	    canvas.ScaleMode = CanvasScaleMode.ScaleWithScreenSize;
+	    canvas.MatchMode = ScreenMatchMode.MatchWidthOrHeight;
+	    canvas.MatchWidthOrHeight = 0.5f;
 
-		// --- 文本创建示例 ---
-		var o1 = stage.CreateObject("Text1");
-		var t1 = o1.AddComponent<Text>();
-		var layout1 = (RUILayout) o1.Layout;
-		layout1.SetParent(canvas.Layout);
-		layout1.AnchorMin = layout1.AnchorMax = new Vector2(0, 0); // Top-left corner
-		layout1.Pivot = new Vector2(0, 0); // Set pivot to top-left for easier positioning
-		layout1.AnchoredPosition = new Vector2(150, 250);
-		layout1.Size = new Vector2(200, 150); // Set a fixed size for the text
-		t1.Color = Color.White;
-		t1.FontSize = 24;
-		t1.FontName = "Microsoft YaHei UI"; // 必须指定字体
-		t1.Content = "扫码缴费";
+	    // Vertical Layout Container
+	    var containerObj = stage.CreateObject("VerticalContainer");
+	    containerObj.Layout.SetParent(canvas.Layout);
+	    var containerLayout = containerObj.AddComponent<RUILayout>(); // cast to RUILayout after being a child of canvas to integrate auto-RUILayout behavior
+	    containerLayout.AnchorMin = containerLayout.AnchorMax = new Vector2(0, 0);
+	    containerLayout.Pivot = new Vector2(0, 0);
+	    containerLayout.AnchoredPosition = new Vector2(150, 250);
+	    containerLayout.Size = new Vector2(300, 200);
 
-		var o2 = stage.CreateObject("Text2");
-		var t2 = o2.AddComponent<Text>();
-		var layout2 = (RUILayout) o2.Layout;
-		layout2.SetParent(canvas.Layout);
-		layout2.AnchoredPosition = new Vector2(150, 325);
-		t2.Color = Color.White;
-		t2.FontSize = 24;
-		t2.FontName = "Microsoft YaHei UI";
-		t2.Content = "快速离场";
+	    // Config Vertical Layout Group
+	    var vGroup = containerObj.AddComponent<UIVerticalLayoutGroup>();
+	    vGroup.PaddingLeft = 10;
+	    vGroup.PaddingTop = 10;
+	    vGroup.Spacing = new Vector2(0, 0);
+	    vGroup.ChildAlignment = UIAlignment.UpperLeft;
+	    vGroup.ControlChildWidth = true;
+	    vGroup.ControlChildHeight = true;
+	    
+	    var o1 = stage.CreateObject("Text1");
+	    var t1 = o1.AddComponent<Text>();
+	    o1.Layout.SetParent(containerLayout);
+	    t1.Color = Color.White;
+	    t1.FontSize = 24;
+	    t1.FontName = "Microsoft YaHei UI";
+	    t1.Content = "扫码缴费";
 
-		return stage;
+	    var o2 = stage.CreateObject("Text2");
+	    var t2 = o2.AddComponent<Text>();
+	    o2.Layout.SetParent(containerLayout);
+	    t2.Color = Color.White;
+	    t2.FontSize = 24;
+	    t2.FontName = "Microsoft YaHei UI";
+	    t2.Content = "快速离场";
+
+	    return stage;
 	}
 
 	private static RStage Example2DGoLiveStage()

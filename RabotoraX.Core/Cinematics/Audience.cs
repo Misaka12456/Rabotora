@@ -27,6 +27,7 @@ public class Audience : Component
 
 	public override void OnAwake()
 	{
+		base.OnAwake();
 		Main ??= this;
 	}
 	

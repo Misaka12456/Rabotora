@@ -58,4 +58,13 @@ public struct Color
 	/// <param name="v">The <see cref="Vector4"/> to convert.</param>
 	/// <returns>A <see cref="Color"/> representation of the <see cref="Vector4"/>.</returns>
 	public static explicit operator Color(Vector4 v) => new(v.X, v.Y, v.Z, v.W);
+	
+	public static Color operator *(Color c, float scalar) => new(c.R * scalar, c.G * scalar, c.B * scalar, c.A * scalar);
+	public static Color operator *(float scalar, Color c) => c * scalar;
+	public static Color operator /(Color c, float scalar) => new(c.R / scalar, c.G / scalar, c.B / scalar, c.A / scalar);
+	public static Color operator /(float scalar, Color c) => new(scalar / c.R, scalar / c.G, scalar / c.B, scalar / c.A);
+	public static Color operator +(Color a, Color b) => new(a.R + b.R, a.G + b.G, a.B + b.B, a.A + b.A);
+	public static Color operator -(Color a, Color b) => new(a.R - b.R, a.G - b.G, a.B - b.B, a.A - b.A);
+	public static Color operator *(Color a, Color b) => new(a.R * b.R, a.G * b.G, a.B * b.B, a.A * b.A);
+	public static Color operator /(Color a, Color b) => new(a.R / b.R, a.G / b.G, a.B / b.B, a.A / b.A);
 }

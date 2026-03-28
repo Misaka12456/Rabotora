@@ -4,6 +4,7 @@ public class RAudioListener : Component
 {
 	public override void OnAwake()
 	{
+		base.OnAwake();
 		AudioService.MainListener ??= this;
 	}
 

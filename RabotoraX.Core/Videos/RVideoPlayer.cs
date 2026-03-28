@@ -42,6 +42,7 @@ public class RVideoPlayer : Component2D
 
 	public override void OnAwake()
 	{
+		base.OnAwake();
 		_decoder = IVideoDecoder.PlatformCreate();
 
 		_alSource = AudioService.AL.GenSource();

@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Scripting;
@@ -5,6 +7,9 @@ using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core;
 
+[SuppressMessage("Usage", "RAT0002")]
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class RObject : Object
 {
 	public string Name { get; set; }
@@ -13,6 +18,7 @@ public sealed class RObject : Object
 	public RStage Stage { get; internal set; } = null!;
 	
 	private readonly List<Component> _components = [];
+	private readonly List<RCoroutine> _coroutines = [];
 	private bool _isStarted;
 
 	public RObject(string name)
@@ -39,11 +45,7 @@ public sealed class RObject : Object
 
 	public T AddComponent<T>() where T : Component, new()
 	{
-		if (typeof(RLayout).IsAssignableFrom(typeof(T)))
-		{
-			throw new InvalidOperationException("Layout components cannot be added manually.");
-		}
-		if (typeof(Component2D).IsAssignableFrom(typeof(T)))
+		if (typeof(Component2D).IsAssignableFrom(typeof(T)) || typeof(T) == typeof(RUILayout))
 		{
 			if (Stage.Type is StageType.Render2D or StageType.Render3DHybrid)
 			{
@@ -57,6 +59,8 @@ public sealed class RObject : Object
 				throw new InvalidOperationException($"Cannot add a 2D component to an object in a {Stage.Type} stage.");
 			}
 		}
+
+		if (typeof(T) == typeof(RUILayout)) return (T)(Component)Layout;
 		var component = new T { RObject = this };
 		_components.Add(component);
 		component.OnAwake();
@@ -123,11 +127,89 @@ public sealed class RObject : Object
 		component = GetComponentInParent<T>();
 		return component != null;
 	}
+	
+	public IEnumerable<Component> EnumerateComponents(bool includeInactive = false, bool recursive = false)
+	{
+		foreach (var component in _components)
+		{
+			if (!includeInactive && !component.IsEnabled) continue;
+			yield return component;
+		}
+		
+		if (recursive)
+		{
+			foreach (var child in Layout.Children)
+			{
+				foreach (var component in child.RObject.EnumerateComponents(includeInactive, true))
+				{
+					yield return component;
+				}
+			}
+		}
+	}
 
+	public RCoroutine StartCoroutine(IEnumerator routine)
+	{
+		var coroutine = new RCoroutine(routine, this);
+		_coroutines.Add(coroutine);
+		return coroutine;
+	}
+	
+	public void StopCoroutine(RCoroutine coroutine)
+	{
+		coroutine.Stop();
+		_coroutines.Remove(coroutine);
+	}
+	
+	public void StopAllCoroutines()
+	{
+		foreach (var coroutine in _coroutines)
+		{
+			coroutine.Stop();
+		}
+		_coroutines.Clear();
+	}
+	
 	internal void Update(float deltaTime)
 	{
 		if (!IsActive) return;
 		
+		UpdateCoroutines(deltaTime);
+		UpdateComponents(deltaTime);
+		UpdateChildren(deltaTime);
+	}
+
+	private void UpdateCoroutines(float deltaTime)
+	{
+		for (int i = _coroutines.Count - 1; i >= 0; i--)
+		{
+			var coroutine = _coroutines[i];
+
+			if (!coroutine.IsRunning)
+			{
+				_components.RemoveAt(i);
+				continue;
+			}
+
+			bool shouldMoveNext = true;
+			if (coroutine.Routine.Current is RYieldData yieldData)
+			{
+				shouldMoveNext = !yieldData.KeepWaiting(deltaTime);
+			}
+
+			if (shouldMoveNext)
+			{
+				if (!coroutine.Routine.MoveNext())
+				{
+					coroutine.IsRunning = false;
+					_coroutines.RemoveAt(i);
+				}
+			}
+		}
+	}
+
+	private void UpdateComponents(float deltaTime)
+	{
 		foreach (var component in _components)
 		{
 			if (!component.IsEnabled) continue;
@@ -139,7 +221,10 @@ public sealed class RObject : Object
 			component.OnUpdate(deltaTime);
 		}
 		_isStarted = true;
-		
+	}
+	
+	private void UpdateChildren(float deltaTime)
+	{
 		foreach (var child in Layout.Children)
 		{
 			child.RObject.Update(deltaTime);
@@ -203,6 +288,7 @@ public sealed class RObject : Object
 	{
 		if (disposing)
 		{
+			StopAllCoroutines();
 			foreach (var component in _components)
 			{
 				if (component is RScript script)

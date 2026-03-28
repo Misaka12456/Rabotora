@@ -60,6 +60,7 @@ public class RAudioPlayer : Component
 
 	public override void OnAwake()
 	{
+		base.OnAwake();
 		_sourceId = AudioService.AL.GenSource();
 		Volume = _volume;
 		Pitch = _pitch;

@@ -6,3 +6,4 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
 RAT0001 | Usage | Warning | GraphicsApiSecurityAnalyzer
+RAT0002 | Usage | Warning | ComponentLifecycleAnalyzer

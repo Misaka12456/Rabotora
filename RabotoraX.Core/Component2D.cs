@@ -7,6 +7,15 @@ namespace RabotoraX.Core;
 
 public abstract class Component2D : Component
 {
+	public RUILayout UILayout
+	{
+		get
+		{
+			CheckReady();
+			return Layout as RUILayout ?? throw new InvalidOperationException("Component2D must be attached to a RUILayout.");
+		}
+	}
+	
 	private RCanvas? _rootCanvas;
 	private bool _hasSearchedRootCanvas;
 
