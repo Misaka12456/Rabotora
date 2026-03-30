@@ -147,6 +147,19 @@ public sealed class RObject : Object
 			}
 		}
 	}
+	
+	public void RemoveComponent(Component component)
+	{
+		if (component is RLayout)
+		{
+			throw new InvalidOperationException("Cannot remove the layout component from an object.");
+		}
+		
+		if (_components.Remove(component))
+		{
+			component.Dispose();
+		}
+	}
 
 	public RCoroutine StartCoroutine(IEnumerator routine)
 	{

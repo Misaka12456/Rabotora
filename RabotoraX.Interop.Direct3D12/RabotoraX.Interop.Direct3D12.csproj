@@ -16,7 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="SkiaSharp" Version="3.119.2" />
         <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
         <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
         <PackageReference Include="Vortice.Direct2D1" Version="3.8.3" />

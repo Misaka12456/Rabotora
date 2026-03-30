@@ -3,6 +3,7 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="RabotoraX.Editor/App.axaml" value="RabotoraX.Editor/RabotoraX.Editor.csproj" />
         <entry key="RabotoraX.Utility.Packer/App.axaml" value="RabotoraX.Utility.Packer/RabotoraX.Utility.Packer.csproj" />
         <entry key="RabotoraX.Utility.Packer/MainWindow.axaml" value="RabotoraX.Utility.Packer/RabotoraX.Utility.Packer.csproj" />
       </map>

@@ -3,6 +3,7 @@ using JetBrains.Annotations;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Scripting;
+using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core
 {
@@ -70,6 +71,15 @@ namespace RabotoraX.Core
 				                            "as they are called before the component is fully initialized. " +
 				                            "Consider moving such code to OnAwake or a later lifecycle method instead.");
 			}
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && this is not RLayout)
+			{
+				RObject.RemoveComponent(this);
+			}
+			base.Dispose(disposing);
 		}
 	}
 }

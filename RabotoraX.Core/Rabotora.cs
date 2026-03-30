@@ -7,6 +7,7 @@ using RabotoraX.Core.Infrastructure;
 using RabotoraX.Core.Inputs;
 using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.Threading;
+using RabotoraX.Core.Threading.Tasks;
 using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core;
@@ -181,6 +182,8 @@ public class Rabotora : IDisposable
 			float currentTime = (float) _clock.Elapsed.TotalSeconds;
 			float deltaTime = currentTime - _lastTime;
 			_lastTime = currentTime;
+			
+			RTaskService.Update(deltaTime);
 			
 			UIEventService.Update();
 

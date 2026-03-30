@@ -21,4 +21,16 @@ public abstract class Object : IDisposable
 	protected virtual void Dispose(bool disposing)
 	{
 	}
+	
+	public static bool operator ==(Object? left, Object? right)
+	{
+		if (ReferenceEquals(left, right)) return true;
+		if (left is null || right is null) return false;
+		return left.InstanceId == right.InstanceId;
+	}
+	
+	public static bool operator !=(Object? left, Object? right)
+	{
+		return !(left == right);
+	}
 }

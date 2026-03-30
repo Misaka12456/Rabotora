@@ -16,7 +16,7 @@ public class RStage : Object
 	/// Represents the color used to clear the stage before rendering each frame.<br />
 	/// This value will not be used if the active stage is <see cref="StageType.Render3D"/> stage; instead, they will be cleared by the <see cref="Audience" />.
 	/// </summary>
-	public Vector4 ClearColor { get; set; } = new Vector4(0, 0, 0, 1); // black
+	public Color ClearColor { get; set; } = Color.Black; // black
 	public IReadOnlyList<RObject> RootObjects => _rootObjects;
 	private readonly List<RObject> _rootObjects = [];
 
@@ -101,7 +101,7 @@ public class RStage : Object
 				if (Type == StageType.Render2D)
 				{
 					// Must after BeginDraw, otherwise it will D2DERR_WRONG_STATE and discard all the following draw calls in this frame
-					_2d.Clear(ClearColor.X, ClearColor.Y, ClearColor.Z, ClearColor.W);
+					_2d.Clear(ClearColor.R, ClearColor.G, ClearColor.B, ClearColor.A);
 				}
 				
 				foreach (var ro in _rootObjects.AsValueEnumerable().Where(ro => ro.IsActive))

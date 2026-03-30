@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/RabotoraX Test Projects/">
     <Project Path="RabotoraX.Windows.Test/RabotoraX.Windows.Test.csproj" />
+    <Project Path="RabotoraX.Windows.YuukoChan.Test/RabotoraX.Windows.YuukoChan.Test.csproj" />
   </Folder>
   <Folder Name="/RabotoraX/" />
   <Folder Name="/RabotoraX/RabotoraX Basic Framework/">

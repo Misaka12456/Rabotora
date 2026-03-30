@@ -101,7 +101,7 @@ public static class Program
 
 	private static RStage Example2DStage()
 	{
-	    var stage = new RStage("Act 1: Hello RabotoraX") { Type = StageType.Render2D, ClearColor = new Vector4(0, 0, 0, 1) };
+	    var stage = new RStage("Act 1: Hello RabotoraX") { Type = StageType.Render2D, ClearColor = Color.Black };
 
 	    // Canvas
 	    var canvasObj = stage.CreateObject("Canvas");
@@ -150,7 +150,7 @@ public static class Program
 
 	private static RStage Example2DGoLiveStage()
 	{
-		var stage = new RStage("Splash") {Type = StageType.Render2D, ClearColor = new(0, 0, 0, 1)};
+		var stage = new RStage("Splash") {Type = StageType.Render2D, ClearColor = Color.Black};
 
 		var canvasObj = stage.CreateObject("Canvas");
 		var canvas = canvasObj.AddComponent<RCanvas>();
@@ -193,7 +193,7 @@ public static class Program
 
 	private static RStage Example2DGoLiveStage2()
 	{
-		var stage = new RStage("Splash") {Type = StageType.Render2D, ClearColor = new(0, 0, 0, 1)};
+		var stage = new RStage("Splash") {Type = StageType.Render2D, ClearColor = Color.Black};
 
 		var canvasObj = stage.CreateObject("Canvas");
 		var canvas = canvasObj.AddComponent<RCanvas>();
@@ -212,7 +212,7 @@ public static class Program
 		imgLayout.AnchorMax = Vector2.One;
 		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
 		image.Opacity = 1;
-		var clip = new VideoClip(new FileStream("<YOUR_VIDEO_PATH_HERE>", FileMode.Open, FileAccess.Read));
+		var clip = new VideoClip(File.OpenRead("<YOUR_VIDEO_PATH_HERE>"));
 		var player = imageObj.AddComponent<RVideoPlayer>();
 		player.Clip = clip;
 		player.Prepare();
