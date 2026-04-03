@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using RabotoraX.Core.Audios;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
@@ -21,6 +22,7 @@ namespace RabotoraX.Core;
 /// See https://docs.misakacastle.moe/rabotora for more details and examples on how to use and extend this class.
 /// </summary>
 [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
+[SuppressMessage("Roslyn", "CA1822:Mark members as static")]
 public class Rabotora : IDisposable
 {
 	private const int MaxErrorFrameThreshold = 5; // If more than this number of consecutive frames fail to render, we will assume the application is in a bad state and exit to prevent hanging indefinitely.
@@ -40,13 +42,13 @@ public class Rabotora : IDisposable
 	/// If this is set, the window will maintain the specified aspect ratio when resized, adding letterboxing as necessary.
 	/// If null, the window can be resized freely without maintaining a specific aspect ratio.
 	/// </summary>
-	public Fractional? FixedAspectRatio { get; }
+	public Fractional? FixedAspectRatio { [UsedImplicitly] get; }
 	
 	/// <summary>
 	/// The currently active stage being performed by the cinema. This will be null if no stage is currently active.<br />
 	/// You can set the active stage by calling <see cref="Cinema.Ready"/> with a new stage instance.
 	/// </summary>
-	public RStage? ActiveStage => Cinema.PerformingStage;
+	[UsedImplicitly] public RStage? ActiveStage => Cinema.PerformingStage;
 
 	private readonly INativeSystemHighPrecisionProvider _osHPProvider;
 	private readonly Stopwatch _clock = new();
@@ -78,6 +80,10 @@ public class Rabotora : IDisposable
 		Input.Initialize(Window.Input);
 		AudioService.Initialize();
 		
+#if DEBUG
+		Diagnostics.Debug.Initialize();
+#endif
+		
 		Window.Resized += (_, size) => Graphics.Resize(size.Item1, size.Item2);
 		Window.SwitchingFullScreen += (_, _) => Graphics.IgnoreAllPresents = true;
 		Window.SwitchedFullScreen += (_, _) => Graphics.IgnoreAllPresents = false;
@@ -93,8 +99,6 @@ public class Rabotora : IDisposable
 		try
 		{
 			Thread.CurrentThread.Name = "Rabotora Main (Window) Thread";
-			Cinema.Ready(initialStage);
-			
 			lock (Graphics.RenderLock)
 			{
 				_clock.Start();
@@ -107,6 +111,7 @@ public class Rabotora : IDisposable
 			// while the render thread will be responsible for rendering frames continuously as long as the window is not closing.
 			var renderThread = new Thread(RenderThreadLoop) { Name = "Rabotora Render Thread" }; // We shouldn't set IsBackground, because if error occurs we want it crash-fast (fail-fast) instead of silently ignore
 			MultiThreadService.Initialize(renderThread);
+			Cinema.Ready(initialStage); // Cinema will ready the stage on the render thread to avoid potential COM threading conflicts (STA [Main Thread] vs MTA [Render Thread]) in any Component's OnAwake/OnStart methods.
 			renderThread.Start();
 			var audioThread = new Thread(AudioThreadLoop) { Name = "Rabotora Audio Thread", IsBackground = true };
 			audioThread.Start();

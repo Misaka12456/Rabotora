@@ -99,9 +99,6 @@ public partial class DirectX11 : INativeGraphicsAPI
 			_swapChain!.Present(0, PresentFlags.None); 
 		}
 		
-#if DEBUG
-		Console.WriteLine($"Initialized Graphics API Backend as {ApiName} on device {DeviceName}");
-#endif
 		IsInitialized = true;
 	}
 
@@ -656,33 +653,40 @@ public partial class DirectX11 : INativeGraphicsAPI
 	
 	public void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0)
 	{
-		uint rowPitch = stride > 0 ? (uint)stride : (uint)(texture.Width * 4);
-    
-		long requiredSize = rowPitch * texture.Height;
-
-		if (pixelData.Length < requiredSize)
+		if (texture is DX11NV12VideoTexture nv12)
 		{
-#if DEBUG
-			Console.WriteLine($"[Video Error] Buffer size mismatch! Have: {pixelData.Length}, Need: {requiredSize}");
-#endif
-			return;
+			UpdateNV12Texture(nv12, pixelData, stride);
 		}
-
-		unsafe
+		else
 		{
-			fixed (void* pData = pixelData)
+			uint rowPitch = stride > 0 ? (uint)stride : (uint)(texture.Width * 4);
+    
+			long requiredSize = rowPitch * texture.Height;
+
+			if (pixelData.Length < requiredSize)
 			{
-				if (texture is D3D11Texture2D d3dTex)
+#if DEBUG
+				Console.WriteLine($"[Video Error] Buffer size mismatch! Have: {pixelData.Length}, Need: {requiredSize}");
+#endif
+				return;
+			}
+
+			unsafe
+			{
+				fixed (void* pData = pixelData)
 				{
-					_context!.UpdateSubresource(d3dTex.Texture, 0u, null, (nint)pData, rowPitch, 0u);
-				}
-				else if (texture is D3D11RenderTexture d3dRT)
-				{
-					_context!.UpdateSubresource(d3dRT.Texture, 0u, null, (nint)pData, rowPitch, 0u);
-				}
-				else if (texture is D2DTexture d2dTex)
-				{
-					d2dTex.Bitmap.CopyFromMemory((nint)pData, rowPitch);
+					if (texture is D3D11Texture2D d3dTex)
+					{
+						_context!.UpdateSubresource(d3dTex.Texture, 0u, null, (nint)pData, rowPitch, 0u);
+					}
+					else if (texture is D3D11RenderTexture d3dRT)
+					{
+						_context!.UpdateSubresource(d3dRT.Texture, 0u, null, (nint)pData, rowPitch, 0u);
+					}
+					else if (texture is D2DTexture d2dTex)
+					{
+						d2dTex.Bitmap.CopyFromMemory((nint)pData, rowPitch);
+					}
 				}
 			}
 		}
@@ -722,6 +726,8 @@ public partial class DirectX11 : INativeGraphicsAPI
 		_depthStateDefault?.Dispose();
 		_depthStateReadOnly?.Dispose();
 		_depthStateNone?.Dispose();
+		
+		DisposeNV12Pipeline();
 		
 		IsInitialized = false;
 		GC.SuppressFinalize(this);

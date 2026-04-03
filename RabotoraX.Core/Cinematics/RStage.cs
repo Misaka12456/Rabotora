@@ -31,6 +31,13 @@ public class RStage : Object
 		_rootObjects.Add(ro);
 		return ro;
 	}
+	
+	internal RObject AddUninitializedObject(RObject ro)
+	{
+		ro.Stage = this;
+		_rootObjects.Add(ro);
+		return ro;
+	}
 		
 	public void DestroyObject(RObject ro)
 	{

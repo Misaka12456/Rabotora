@@ -1,7 +1,5 @@
 using System.Buffers;
-using System.Collections.Concurrent;
-using System.Reflection;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 using RabotoraX.Core.Audios;
 using RabotoraX.Core.Graphics;
@@ -13,7 +11,8 @@ namespace RabotoraX.Core.Videos;
 public class RVideoPlayer : Component2D
 {
 	private const int BufferCount = 12;
-	private const int VideoQueueMaxCacheCount = 20;
+	private const int VideoQueueMaxCacheCount = 60;
+	private const int AudioQueueMaxCacheCount = 120;
 
 	public VideoClip? Clip { get; set; }
 	public Texture2D? Texture { get; private set; }
@@ -26,14 +25,18 @@ public class RVideoPlayer : Component2D
 	private uint _alSource;
 	private readonly Queue<uint> _alBuffers = new();
 	private readonly Queue<double> _alBufferPtsQueue = new();
-	private readonly ConcurrentQueue<VideoFrame> _videoQueue = new();
-	private readonly ConcurrentQueue<AudioFrame> _audioQueue = new();
+
+	private readonly Queue<VideoFrame> _videoQueue = new();
+	private readonly Queue<AudioFrame> _audioQueue = new();
+	private readonly Lock _videoQueueLock = new();
+	private readonly Lock _audioQueueLock = new();
+
+	private SemaphoreSlim _videoQueueSlots = new(VideoQueueMaxCacheCount);
+	private SemaphoreSlim _audioQueueSlots = new(AudioQueueMaxCacheCount);
+
 	private readonly ArrayPool<byte> _pixelPool = ArrayPool<byte>.Shared;
 	private readonly AutoResetEvent _frameNeededSignal = new(false);
 
-	private INativeShader? _videoShader;
-
-	private RawImage? _rawImage;
 	private Thread? _decodeThread;
 	private volatile bool _running;
 	private double _audioClock;
@@ -57,20 +60,19 @@ public class RVideoPlayer : Component2D
 	{
 		if (Clip == null || _decoder == null) return;
 
+		ShutdownPlayback(recreateDecoder: false);
+
 		_decoder.Initialize(Clip, ColorType);
 
 		Texture = new Texture2D();
-		Texture.CreateEmpty2DForVideo(Clip.Width, Clip.Height);
+		Texture.CreateEmpty2DForVideo(Clip.Width, Clip.Height, VideoPixelFormat.NV12);
 		
-		using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("RabotoraX.Core.Assets.Shaders.VideoDefault.hlsl")!, new UTF8Encoding(false));
-		string fragSource = sr.ReadToEnd();
-		sr.Close();
-		_rawImage = GetComponent<RawImage>();
-		if (GraphicsService.API.ApiName == "Direct3D 12")
-		{
-			_videoShader = GraphicsService.API.CreateNativeShader(ShaderType.FragmentShader, fragSource, "PSMain");
-			_rawImage?.CustomShader = _videoShader;
-		}
+		GetComponent<RawImage>();
+
+		_audioClock = 0;
+		_videoClock = 0;
+		_isPaused = true;
+
 		StartDecodeThread();
 	}
 
@@ -82,9 +84,11 @@ public class RVideoPlayer : Component2D
 		{
 			_isPaused = false;
 
-			PrerollAudio();
-
-			AudioService.AL.SourcePlay(_alSource);
+			if (_decoder.HasAudio)
+			{
+				PrerollAudio();
+				AudioService.AL.SourcePlay(_alSource);
+			}
 		}
 	}
 
@@ -96,24 +100,22 @@ public class RVideoPlayer : Component2D
 		if (!_isPaused)
 		{
 			_isPaused = true;
-			AudioService.AL.SourcePause(_alSource);
+
+			if (_decoder.HasAudio)
+			{
+				AudioService.AL.SourcePause(_alSource);
+			}
 		}
 	}
 
 	[UsedImplicitly]
 	public void Stop()
 	{
+		ShutdownPlayback(recreateDecoder: true);
+
+		_audioClock = 0;
+		_videoClock = 0;
 		_isPaused = true;
-
-		_running = false;
-		_decodeThread?.Join();
-
-		AudioService.AL.SourceStop(_alSource);
-
-		ClearQueues();
-
-		_decoder?.Dispose();
-		_decoder = IVideoDecoder.PlatformCreate();
 	}
 
 	public override void OnUpdate(float deltaTime)
@@ -121,9 +123,7 @@ public class RVideoPlayer : Component2D
 		if (_isPaused || _decoder == null) return;
 
 		UpdateAudio();
-
 		double masterTime = GetMasterTime(deltaTime);
-
 		UpdateVideo(masterTime);
 	}
 
@@ -145,66 +145,113 @@ public class RVideoPlayer : Component2D
 	{
 		while (_running)
 		{
-			if (_decoder == null) continue;
-
-			bool videoFull = _videoQueue.Count >= VideoQueueMaxCacheCount;
-			bool audioFull = _audioQueue.Count >= 60;
-
-			// Only when both queues are full that we wait
-			if (videoFull && audioFull)
+			var decoder = _decoder;
+			if (decoder == null)
 			{
-				_frameNeededSignal.WaitOne(5);
+				_frameNeededSignal.WaitOne(10);
 				continue;
 			}
 
 			bool worked = false;
 
-			// Video Queue
-			if (!videoFull)
+			if (_videoQueueSlots.Wait(0))
 			{
-				// int frameSize = Clip!.Height * _decoder.Stride;
-				int frameSize = (int) (Clip!.Height * _decoder.Stride * 1.5f); // NV12 format may require up to 1.5x the size of the Y plane for the full frame
-				byte[] buffer = _pixelPool.Rent(frameSize);
-            
-				if (_decoder.TryReadNextVideoFrame(buffer, out int stride, out double vPts))
+				if (TryDecodeVideoFrame(decoder, out var videoFrame))
 				{
-					_videoQueue.Enqueue(new VideoFrame {Pixels = buffer, Stride = stride, Pts = vPts});
+					lock (_videoQueueLock)
+					{
+						_videoQueue.Enqueue(videoFrame);
+					}
 					worked = true;
 				}
 				else
 				{
-					_pixelPool.Return(buffer);
+					_videoQueueSlots.Release();
 				}
 			}
 
-			// Audio Queue
-			if (!audioFull && _decoder.TryReadNextAudioBlock(out var a))
+			if (_audioQueueSlots.Wait(0))
 			{
-				byte[] rentedBuffer = ArrayPool<byte>.Shared.Rent(a.Samples.Length);
-				a.Samples.CopyTo(rentedBuffer);
-				_audioQueue.Enqueue(new AudioFrame
+				if (TryDecodeAudioFrame(decoder, out var audioFrame))
 				{
-					// Samples = a.Samples.ToArray(),
-					Samples = rentedBuffer,
-					SampleLength = a.Samples.Length,
-					SampleRate = a.SampleRate,
-					Channels = a.Channels,
-					BitDepth = a.BitDepth,
-					Pts = a.Pts
-				});
-				worked = true;
+					lock (_audioQueueLock)
+					{
+						_audioQueue.Enqueue(audioFrame);
+					}
+					worked = true;
+				}
+				else
+				{
+					_audioQueueSlots.Release();
+				}
 			}
 
 			if (!worked)
 			{
-				Thread.Sleep(1);
+				_frameNeededSignal.WaitOne(10);
 			}
 		}
 	}
 
+	private bool TryDecodeVideoFrame(IVideoDecoder decoder, out VideoFrame frame)
+	{
+		frame = default;
+
+		if (Clip == null) return false;
+
+		// int frameSize = checked(decoder.Stride * Clip.Height);
+		int frameSize = decoder.PixelFormat switch
+		{
+			VideoPixelFormat.NV12 => checked(decoder.Stride * Clip.Height * 3 / 2),
+			_ => checked(decoder.Stride * Clip.Height) // for VideoPixelFormat.Bgra32, Stride should already account for 4 bytes per pixel
+		};
+		byte[] buffer = _pixelPool.Rent(frameSize);
+
+		if (decoder.TryReadNextVideoFrame(buffer, out int stride, out double vPts))
+		{
+			frame = new VideoFrame
+			{
+				Pixels = buffer,
+				Stride = stride,
+				Pts = vPts
+			};
+			return true;
+		}
+
+		_pixelPool.Return(buffer);
+		return false;
+	}
+
+	[SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Local")]
+	[SuppressMessage("Roslyn", "CA1822")]
+	private bool TryDecodeAudioFrame(IVideoDecoder decoder, out AudioFrame frame)
+	{
+		frame = default;
+
+		if (!decoder.TryReadNextAudioBlock(out var a))
+		{
+			return false;
+		}
+
+		byte[] rentedBuffer = ArrayPool<byte>.Shared.Rent(a.SampleLength);
+		a.Samples.CopyTo(rentedBuffer);
+
+		frame = new AudioFrame()
+		{
+			Samples = rentedBuffer,
+			SampleLength = a.SampleLength,
+			SampleRate = a.SampleRate,
+			Channels = a.Channels,
+			BitDepth = a.BitDepth,
+			Pts = a.Pts
+		};
+
+		return true;
+	}
+
 	private unsafe void UpdateAudio()
 	{
-		if (_decoder is not {HasAudio: true}) return;
+		if (_decoder is not { HasAudio: true }) return;
 
 		AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.BuffersProcessed, out int processed);
 
@@ -222,20 +269,18 @@ public class RVideoPlayer : Component2D
 				_alBuffers.Enqueue(b);
 			}
 
-			// Dequeue the corresponding PTS for the processed buffers after buffers are played
 			for (int i = 0; i < processed; i++)
 			{
 				_alBufferPtsQueue.TryDequeue(out _);
 			}
 		}
-
-		while (_alBuffers.Count > 0 && _audioQueue.TryDequeue(out var frame))
+		
+		while (_alBuffers.Count > 0 && TryDequeueAudioFrame(out var frame))
 		{
 			uint buf = _alBuffers.Dequeue();
 
 			fixed (byte* p = frame.Samples)
 			{
-				// Here we used a pooled Samples array, so we must use SampleLength instead of Samples.Length
 				AudioService.AL.BufferData(buf, GetFormat(frame), p, frame.SampleLength, frame.SampleRate);
 			}
 
@@ -253,14 +298,15 @@ public class RVideoPlayer : Component2D
 			}
 		}
 
-		// Fixed the audio clock to the PTS of the front buffer in queue
 		if (_alBufferPtsQueue.TryPeek(out double frontPts))
 		{
 			_audioClock = frontPts;
 		}
 
 		AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.SourceState, out int state);
-		if (state != (int) SourceState.Playing)
+		AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.BuffersQueued, out int queued);
+
+		if (queued > 0 && state != (int)SourceState.Playing)
 		{
 			AudioService.AL.SourcePlay(_alSource);
 		}
@@ -268,49 +314,77 @@ public class RVideoPlayer : Component2D
 
 	private void PrerollAudio()
 	{
-		int count = 0;
-
-		while (count < 5 && _audioQueue.TryPeek(out _))
+		for (int i = 0; i < 5; i++)
 		{
 			UpdateAudio();
-			count++;
 		}
 	}
 
 	private void UpdateVideo(double masterTime)
 	{
-		VideoFrame frameToRender = default;
-		bool hasFrame = false;
+		VideoFrame? frameToRender = null;
 
-		while (_videoQueue.TryPeek(out var frame))
+		while (TryPeekAndDequeueReadyVideoFrame(masterTime, out var frame))
 		{
-			if (frame.Pts > masterTime + 0.005) break;
-
-			if (hasFrame && frameToRender.Pixels != null)
+			if (frameToRender is {Pixels: not null})
 			{
-				_pixelPool.Return(frameToRender.Pixels);
+				_pixelPool.Return(frameToRender.Value.Pixels!);
 			}
 
-			if (_videoQueue.Count < VideoQueueMaxCacheCount / 2)
-			{
-				_frameNeededSignal.Set();
-			}
-
-			_videoQueue.TryDequeue(out frameToRender);
-			hasFrame = true;
+			frameToRender = frame;
 		}
 
-		if (hasFrame && frameToRender.Pixels != null)
+		if (frameToRender.HasValue)
 		{
-			try 
+			try
 			{
-				UpdateRenderTexturePixels(frameToRender);
+				UpdateRenderTexturePixels(frameToRender.Value);
 			}
-			finally 
+			finally
 			{
-				_pixelPool.Return(frameToRender.Pixels);
+				if (frameToRender.Value.Pixels != null)
+				{
+					_pixelPool.Return(frameToRender.Value.Pixels);
+				}
 			}
 		}
+	}
+
+	private bool TryPeekAndDequeueReadyVideoFrame(double masterTime, out VideoFrame frame)
+	{
+		frame = default;
+
+		lock (_videoQueueLock)
+		{
+			if (_videoQueue.Count == 0) return false;
+
+			var head = _videoQueue.Peek();
+			if (head.Pts > masterTime + 0.005)
+			{
+				return false;
+			}
+
+			frame = _videoQueue.Dequeue();
+		}
+
+		_videoQueueSlots.Release();
+		_frameNeededSignal.Set();
+		return true;
+	}
+
+	private bool TryDequeueAudioFrame(out AudioFrame frame)
+	{
+		frame = default;
+
+		lock (_audioQueueLock)
+		{
+			if (_audioQueue.Count == 0) return false;
+			frame = _audioQueue.Dequeue();
+		}
+
+		_audioQueueSlots.Release();
+		_frameNeededSignal.Set();
+		return true;
 	}
 
 	private void UpdateRenderTexturePixels(VideoFrame frame)
@@ -323,35 +397,108 @@ public class RVideoPlayer : Component2D
 	{
 		if (_decoder!.HasAudio)
 		{
+			AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.SourceState, out int state);
+			if (state != (int)SourceState.Playing)
+				return _videoClock;
+
 			AudioService.AL.GetSourceProperty(_alSource, SourceFloat.SecOffset, out float offset);
-			return _audioClock + offset;
-		}
-		else
-		{
-			_videoClock += deltaTime;
+			_videoClock = _audioClock + offset;
 			return _videoClock;
 		}
+
+		_videoClock += deltaTime;
+		return _videoClock;
 	}
 
 	private void ClearQueues()
 	{
-		while (_videoQueue.TryDequeue(out var frame))
+		lock (_videoQueueLock)
 		{
-			if (frame.Pixels != null)
+			while (_videoQueue.Count > 0)
 			{
-				_pixelPool.Return(frame.Pixels);
+				var frame = _videoQueue.Dequeue();
+				if (frame.Pixels != null)
+				{
+					_pixelPool.Return(frame.Pixels);
+				}
 			}
 		}
 
-		while (_audioQueue.TryDequeue(out var frame))
+		lock (_audioQueueLock)
 		{
-			if (frame.Samples != null)
+			while (_audioQueue.Count > 0)
 			{
-				ArrayPool<byte>.Shared.Return(frame.Samples);
+				var frame = _audioQueue.Dequeue();
+				if (frame.Samples != null)
+				{
+					ArrayPool<byte>.Shared.Return(frame.Samples);
+				}
 			}
 		}
-		
+
+		// 重新创建 semaphore（最安全）
+		_videoQueueSlots.Dispose();
+		_audioQueueSlots.Dispose();
+
+		_videoQueueSlots = new SemaphoreSlim(VideoQueueMaxCacheCount);
+		_audioQueueSlots = new SemaphoreSlim(AudioQueueMaxCacheCount);
+
 		_alBufferPtsQueue.Clear();
+		_frameNeededSignal.Set();
+	}
+
+	private unsafe void ReturnAllQueuedOpenAlBuffers()
+	{
+		try
+		{
+			AudioService.AL.GetSourceProperty(_alSource, GetSourceInteger.BuffersQueued, out int queued);
+			if (queued <= 0) return;
+
+			uint[] arr = new uint[queued];
+			fixed (uint* p = arr)
+			{
+				AudioService.AL.SourceUnqueueBuffers(_alSource, queued, p);
+			}
+
+			foreach (uint b in arr)
+			{
+				_alBuffers.Enqueue(b);
+			}
+
+			_alBufferPtsQueue.Clear();
+		}
+		catch
+		{
+			// ignore
+		}
+	}
+
+	private void ShutdownPlayback(bool recreateDecoder)
+	{
+		_isPaused = true;
+		_running = false;
+		_frameNeededSignal.Set();
+
+		_decodeThread?.Join();
+		_decodeThread = null;
+
+		try
+		{
+			AudioService.AL.SourceStop(_alSource);
+		}
+		catch
+		{
+			// ignore
+		}
+
+		ReturnAllQueuedOpenAlBuffers();
+		ClearQueues();
+
+		if (recreateDecoder)
+		{
+			_decoder?.Dispose();
+			_decoder = IVideoDecoder.PlatformCreate();
+		}
 	}
 
 	private static BufferFormat GetFormat(AudioFrame d)
@@ -365,19 +512,23 @@ public class RVideoPlayer : Component2D
 	{
 		if (disposing)
 		{
-			_running = false;
-			_decodeThread?.Join();
-			if (GraphicsService.API.ApiName == "Direct3D 12")
+			ShutdownPlayback(recreateDecoder: false);
+			
+			try
 			{
-				_rawImage?.CustomShader = null;
-				_videoShader?.Dispose();
-				_videoShader = null;
+				AudioService.AL.DeleteSource(_alSource);
+			}
+			catch
+			{
+				// ignore
 			}
 
-			AudioService.AL.SourceStop(_alSource);
-			AudioService.AL.DeleteSource(_alSource);
-
 			_decoder?.Dispose();
+			_decoder = null;
+
+			_videoQueueSlots.Dispose();
+			_audioQueueSlots.Dispose();
+			_frameNeededSignal.Dispose();
 		}
 
 		base.Dispose(disposing);

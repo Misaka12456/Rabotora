@@ -22,8 +22,7 @@ public sealed class ComponentLifecycleAnalyzer : DiagnosticAnalyzer
 	private readonly static LocalizableString Description = "Accessing RObject, Layout, or Find methods from constructors will result in a RabotoraException at runtime. These properties are only available after OnAwake has been called by the engine.";
 	private const string Category = "Usage";
 	
-	private readonly static DiagnosticDescriptor Rule = new(DiagnosticId, Title, MessageFormat, Category,
-		DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+	private readonly static DiagnosticDescriptor Rule = new(DiagnosticId, Title, MessageFormat, Category, DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 

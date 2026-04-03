@@ -7,6 +7,8 @@ public interface IVideoDecoder : IDisposable
 	bool IsReady { get; }
 	int Stride { get; }
 	
+	VideoPixelFormat PixelFormat { get; }
+	
 	void Initialize(VideoClip clip, VideoRenderColorType colorType = VideoRenderColorType.FollowSystem);
 	
 	bool TryReadNextVideoFrame(byte[] frameData, out int stride, out double timestamp);

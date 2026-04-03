@@ -26,6 +26,8 @@
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\RabotoraX.CodeFix\RabotoraX.CodeFix.csproj"
                           OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\RabotoraX.Generators\RabotoraX.Generators.csproj"
+                          OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

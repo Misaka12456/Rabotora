@@ -13,14 +13,7 @@ public sealed class HighPrecisionTimer : INativeSystemHighPrecisionProvider
 	public bool TryEnableHighPrecision()
 	{
 		_enabled = timeBeginPeriod(1) == 0;
-		if (_enabled)
-		{
-#if DEBUG
-			Console.WriteLine("High precision timer enabled for Win32 platform by timeBeginPeriod(1).");
-#endif
-			return true;
-		}
-		return false;
+		return _enabled;
 	}
 	
 	public void Dispose()

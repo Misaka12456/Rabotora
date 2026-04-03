@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using RabotoraX.Core.Diagnostics;
@@ -25,6 +26,9 @@ public sealed unsafe class VistaStyleGraphicsAPISelectDialog : INativeGraphicsAP
 		return (keyState & 0x8000) != 0;
 	}
 
+	[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+	[UnconditionalSuppressMessage("Trimming", "IL2057:UnrecognizedReflectionPattern", Justification = "We ensure the type definitions in SupportedGraphicsAPIs are loaded. " +
+	                                                                                                  "See RabotoraX.Core.Graphics.INativeGraphicsAPI.PlatformCreate() for more details.")]
 	public Type? ShowDialog()
 	{
 		int apiCount = SupportedGraphicsAPIs.Length;
@@ -53,7 +57,7 @@ public sealed unsafe class VistaStyleGraphicsAPISelectDialog : INativeGraphicsAP
 				pButtons = buttons
 			};
 
-			config.Anonymous1.pszMainIcon = (char*) TD.TD_INFORMATION_ICON;
+			config.Anonymous1.pszMainIcon = TD.TD_INFORMATION_ICON;
 
 			fixed (char* title = "RabotoraX Engine Debug Initialization")
 			fixed (char* mainInstru = "Select Graphics API Backend")

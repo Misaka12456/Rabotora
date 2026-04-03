@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Scripting;
+using RabotoraX.Core.Serialization;
 using RabotoraX.Core.UI;
 using RabotoraX.Core.Videos;
 
@@ -10,17 +11,31 @@ namespace RabotoraX.Windows.Test.Demo2D;
 public sealed class VideoTexturePlayer : RManagedScript
 {
 	private const float WaitTime = 1.5f;
-	private RVideoPlayer _videoPlayer = null!;
-	private RawImage _rawImage = null!;
-	public Text _statusText = null!;
-	private float _prepareTimer = 0;
+	
+	
+	[RSerializableField] public Text _statusText = null!;
+	[RSerializableField] public string VideoPath = "Assets/Videos/sample.mp4";
+	
+	private RVideoPlayer? _videoPlayer;
+	private RawImage? _rawImage;
+	
+	private float _prepareTimer;
 	private string _ver = string.Empty;
 	private string _length = string.Empty;
-	
+
+	public override void OnAwake()
+	{
+		_videoPlayer = GetComponent<RVideoPlayer>();
+		_rawImage = GetComponent<RawImage>();
+	}
+
 	public override void OnStart()
 	{
-		_videoPlayer = GetComponent<RVideoPlayer>()!;
-		_rawImage = GetComponent<RawImage>()!;
+		if (_videoPlayer == null) return;
+		var clip = new VideoClip(File.OpenRead(VideoPath));
+		_videoPlayer.Clip = clip;
+		_videoPlayer.Prepare();
+		_rawImage?.Texture = _videoPlayer.Texture;
 		string graphApiName = GraphicsService.API.ApiName switch
 		{
 			{ } p when p.StartsWith("Direct") => "DirectX",
@@ -47,7 +62,7 @@ public sealed class VideoTexturePlayer : RManagedScript
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private void UpdatePlayer()
 	{
-		if (_videoPlayer.IsPlaying) return;
+		if (_videoPlayer!.IsPlaying) return;
 		
 		Console.WriteLine("Preparing video...");
 		_videoPlayer.Play();
@@ -55,7 +70,7 @@ public sealed class VideoTexturePlayer : RManagedScript
 
 	private void UpdateStatus()
 	{
-		var currentTime = _videoPlayer.Time;
+		var currentTime = _videoPlayer!.Time;
 		var colorRange = _videoPlayer.ColorType switch
 		{
 			VideoRenderColorType.FollowSystem => "Follow System",

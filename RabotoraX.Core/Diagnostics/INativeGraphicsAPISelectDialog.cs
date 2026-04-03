@@ -10,6 +10,7 @@ public interface INativeGraphicsAPISelectDialog : IDisposable
 	/// Shows the dialog to the user and returns the selected graphics API type, or null if the user cancels the dialog or an error occurs.
 	/// </summary>
 	/// <returns>The selected graphics API type, targeted to the class who implements the <see cref="INativeGraphicsAPI" /> interface, or null if the user cancels the dialog or an error occurs.</returns>
+	[return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 	Type? ShowDialog();
 	
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Win32.InfraImpl.VistaStyleGraphicsAPISelectDialog", "RabotoraX.Interop.Win32")]

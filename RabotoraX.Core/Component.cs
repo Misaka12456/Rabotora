@@ -3,10 +3,12 @@ using JetBrains.Annotations;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Scripting;
+using RabotoraX.Core.Serialization;
 using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core
 {
+	[RBinarySerializable]
 	public abstract class Component : Object
 	{
 		public RObject RObject { get; internal set; } = null!;
@@ -20,11 +22,11 @@ namespace RabotoraX.Core
 		}
 
 		public bool IsEnabled { get; set; } = true;
-		private bool _isAwakened;
+		internal bool IsAwakened { get; private set; }
 
 		public virtual void OnAwake()
 		{
-			_isAwakened = true;
+			IsAwakened = true;
 		}
 		public virtual void OnStart() { }
 		public virtual void OnUpdate(float deltaTime) { }
@@ -64,7 +66,7 @@ namespace RabotoraX.Core
 
 		protected void CheckReady()
 		{
-			if (!_isAwakened)
+			if (!IsAwakened)
 			{
 				throw new RabotoraException("Component is not ready. " +
 				                            "Access to RObject-dependent properties/methods may cause unexpected NullReferenceExceptions from constructors or field initializers " +
@@ -77,7 +79,7 @@ namespace RabotoraX.Core
 		{
 			if (disposing && this is not RLayout)
 			{
-				RObject.RemoveComponent(this);
+				RObject.RemoveComponentWithoutDispose(this);
 			}
 			base.Dispose(disposing);
 		}

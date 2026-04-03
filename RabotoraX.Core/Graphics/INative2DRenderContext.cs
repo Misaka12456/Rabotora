@@ -1,6 +1,7 @@
 using System.Numerics;
 using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.UI;
+using RabotoraX.Core.Videos;
 
 namespace RabotoraX.Core.Graphics;
 
@@ -25,6 +26,7 @@ public interface INative2DRenderContext : IDisposable
 	/// </param>
 	/// <returns>The created video texture, which should be optimized for dynamic updates and use Ignore alpha mode.</returns>
 	INativeTexture2D CreateVideoTexture(int width, int height, ReadOnlyMemory<byte>? initialData = null);
+	INativeTexture2D CreateVideoTexture(int width, int height, VideoPixelFormat format, ReadOnlyMemory<byte>? initialData = null);
 
 	INativeTexture2D CreateEmptyTexture(int width, int height);
 	

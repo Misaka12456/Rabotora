@@ -125,9 +125,6 @@ public partial class DirectX12 : INativeGraphicsAPI
 		CreateResources(window.Size.Width, window.Size.Height);
 		CreateD2D11On12();
 		
-#if DEBUG
-		Console.WriteLine($"Initialized Graphics API Backend as {ApiName} on device {DeviceName}");
-#endif
 		IsInitialized = true;
 	}
 
@@ -553,71 +550,79 @@ public partial class DirectX12 : INativeGraphicsAPI
 	
 	public unsafe void UpdateTexture2D(INativeTexture2D texture, ReadOnlySpan<byte> pixelData, int stride = 0)
 	{
-		if (texture is D2DTexture d2dTex)
+		switch (texture)
 		{
-			int rowPitch = stride > 0 ? stride : d2dTex.Width * 4;
-			fixed (void* pData = pixelData)
+			case DX11NV12VideoTexture nv12:
+				UpdateNV12Texture(nv12, pixelData, stride);
+				break;
+			case D2DTexture d2dTex:
 			{
-				d2dTex.Bitmap.CopyFromMemory((nint)pData, (uint)rowPitch);
-			}
-		}
-		else if (texture is DX12Texture2D dxTex)
-		{
-			int rowPitch = stride > 0 ? stride : dxTex.Width * 4;
-			int alignedRowPitch = (rowPitch + 255) & ~255;
-			int slicePitch = alignedRowPitch * dxTex.Height;
-
-			if (slicePitch <= 0) return;
-
-			var uploadResource = _device!.CreateCommittedResource(new HeapProperties(HeapType.Upload), HeapFlags.None, ResourceDescription.Buffer((ulong) slicePitch), ResourceStates.GenericRead);
-
-			void* pMappedData = null;
-			var res = uploadResource.Map(0, null, &pMappedData);
-			if (res.Success && pMappedData != null)
-			{
-				byte* pDstBase = (byte*) pMappedData;
-				fixed (byte* pSrc = pixelData)
+				int rowPitch = stride > 0 ? stride : d2dTex.Width * 4;
+				fixed (void* pData = pixelData)
 				{
-					for (int y = 0; y < dxTex.Height; y++)
-					{
-						byte* pDstRow = pDstBase + y * alignedRowPitch;
-						void* pSrcRow = pSrc + y * rowPitch;
+					d2dTex.Bitmap.CopyFromMemory((nint)pData, (uint)rowPitch);
+				}
+				break;
+			}
+			case DX12Texture2D dxTex:
+			{
+				int rowPitch = stride > 0 ? stride : dxTex.Width * 4;
+				int alignedRowPitch = (rowPitch + 255) & ~255;
+				int slicePitch = alignedRowPitch * dxTex.Height;
 
-						Unsafe.CopyBlock(pDstRow, pSrcRow, (uint) rowPitch);
-						Unsafe.InitBlock(pDstRow + rowPitch, 0, (uint) (alignedRowPitch - rowPitch));
+				if (slicePitch <= 0) return;
+
+				var uploadResource = _device!.CreateCommittedResource(new HeapProperties(HeapType.Upload), HeapFlags.None, ResourceDescription.Buffer((ulong) slicePitch), ResourceStates.GenericRead);
+
+				void* pMappedData = null;
+				var res = uploadResource.Map(0, null, &pMappedData);
+				if (res.Success && pMappedData != null)
+				{
+					byte* pDstBase = (byte*) pMappedData;
+					fixed (byte* pSrc = pixelData)
+					{
+						for (int y = 0; y < dxTex.Height; y++)
+						{
+							byte* pDstRow = pDstBase + y * alignedRowPitch;
+							void* pSrcRow = pSrc + y * rowPitch;
+
+							Unsafe.CopyBlock(pDstRow, pSrcRow, (uint) rowPitch);
+							Unsafe.InitBlock(pDstRow + rowPitch, 0, (uint) (alignedRowPitch - rowPitch));
+						}
 					}
 				}
-			}
 
-			uploadResource.Unmap(0);
+				uploadResource.Unmap(0);
 
-			var cmdAlloc = _device.CreateCommandAllocator(CommandListType.Direct);
-			var cmdList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, cmdAlloc);
+				var cmdAlloc = _device.CreateCommandAllocator(CommandListType.Direct);
+				var cmdList = _device.CreateCommandList<ID3D12GraphicsCommandList>(0, CommandListType.Direct, cmdAlloc);
 
-			var dstLoc = new TextureCopyLocation(dxTex.Resource);
-			var srcLoc = new TextureCopyLocation(uploadResource, new PlacedSubresourceFootPrint()
-			{
-				Offset = 0,
-				Footprint = new SubresourceFootPrint()
+				var dstLoc = new TextureCopyLocation(dxTex.Resource);
+				var srcLoc = new TextureCopyLocation(uploadResource, new PlacedSubresourceFootPrint()
 				{
-					Format = Format.B8G8R8A8_UNorm,
-					Width = (uint) dxTex.Width,
-					Height = (uint) dxTex.Height,
-					Depth = 1,
-					RowPitch = (uint) alignedRowPitch
-				}
-			});
+					Offset = 0,
+					Footprint = new SubresourceFootPrint()
+					{
+						Format = Format.B8G8R8A8_UNorm,
+						Width = (uint) dxTex.Width,
+						Height = (uint) dxTex.Height,
+						Depth = 1,
+						RowPitch = (uint) alignedRowPitch
+					}
+				});
 
-			cmdList.CopyTextureRegion(dstLoc, 0, 0, 0, srcLoc);
-			cmdList.ResourceBarrierTransition(dxTex.Resource, ResourceStates.CopyDest, ResourceStates.PixelShaderResource);
-			cmdList.Close();
+				cmdList.CopyTextureRegion(dstLoc, 0, 0, 0, srcLoc);
+				cmdList.ResourceBarrierTransition(dxTex.Resource, ResourceStates.CopyDest, ResourceStates.PixelShaderResource);
+				cmdList.Close();
 
-			_commandQueue!.ExecuteCommandList(cmdList);
-			WaitIdle();
+				_commandQueue!.ExecuteCommandList(cmdList);
+				WaitIdle();
 
-			cmdList.Dispose();
-			cmdAlloc.Dispose();
-			uploadResource.Dispose();
+				cmdList.Dispose();
+				cmdAlloc.Dispose();
+				uploadResource.Dispose();
+				break;
+			}
 		}
 	}
 	
@@ -888,6 +893,7 @@ public partial class DirectX12 : INativeGraphicsAPI
 		_rtvHeap?.Dispose();
 		_dsvHeap?.Dispose();
 		_depthBuffer?.Dispose();
+		DisposeNV12Pipeline();
 		_device?.Dispose();
 
 		IsInitialized = false;

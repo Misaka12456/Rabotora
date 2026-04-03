@@ -1,8 +1,11 @@
 using System.Collections;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Scripting;
+using RabotoraX.Core.Serialization;
 using RabotoraX.Core.UI;
 
 namespace RabotoraX.Core;
@@ -12,6 +15,8 @@ namespace RabotoraX.Core;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class RObject : Object
 {
+	[RNonSerialized] public readonly static RObjectEqualityComparer EqualityComparer = new();
+	
 	public string Name { get; set; }
 	public bool IsActive { get; set; } = true;
 	public RLayout Layout { get; private set; }
@@ -66,6 +71,12 @@ public sealed class RObject : Object
 		component.OnAwake();
 		
 		return component;
+	}
+	
+	internal void UnsafeAddUninitializedComponent(Component component)
+	{
+		component.RObject = this;
+		_components.Add(component);
 	}
 	
 	public T? GetComponent<T>() where T : Component
@@ -160,6 +171,16 @@ public sealed class RObject : Object
 			component.Dispose();
 		}
 	}
+	
+	internal void RemoveComponentWithoutDispose(Component component)
+	{
+		if (component is RLayout)
+		{
+			throw new InvalidOperationException("Cannot remove the layout component from an object.");
+		}
+		
+		_components.Remove(component);
+	}
 
 	public RCoroutine StartCoroutine(IEnumerator routine)
 	{
@@ -223,8 +244,20 @@ public sealed class RObject : Object
 
 	private void UpdateComponents(float deltaTime)
 	{
-		foreach (var component in _components)
+		// foreach (var component in _components)
+		// {
+		// 	if (!component.IsEnabled) continue;
+		// 	
+		// 	if (!_isStarted)
+		// 	{
+		// 		component.OnStart();
+		// 	}
+		// 	component.OnUpdate(deltaTime); <- possible System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+		// }
+		// ReSharper disable once ForCanBeConvertedToForeach <- possible System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+		for (int i = 0; i < _components.Count; i++)
 		{
+			var component = _components[i];
 			if (!component.IsEnabled) continue;
 			
 			if (!_isStarted)
@@ -238,8 +271,14 @@ public sealed class RObject : Object
 	
 	private void UpdateChildren(float deltaTime)
 	{
-		foreach (var child in Layout.Children)
+		// foreach (var child in Layout.Children)
+		// {
+		// 	child.RObject.Update(deltaTime); <- possible System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+		// }
+		// ReSharper disable once ForCanBeConvertedToForeach <- possible System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+		for (int i = 0; i < Layout.Children.Count; i++)
 		{
+			var child = Layout.Children[i];
 			child.RObject.Update(deltaTime);
 		}
 	}
@@ -302,8 +341,17 @@ public sealed class RObject : Object
 		if (disposing)
 		{
 			StopAllCoroutines();
-			foreach (var component in _components)
+			// foreach (var component in _components.ToImmutableArray())
+			// {
+			// 	if (component is RScript script)
+			// 	{
+			// 		script.OnDestroy();
+			// 	}
+			// 	component.Dispose(); <- System.InvalidOperationException: Collection was modified; enumeration operation may not execute.
+			// }
+			for (int i = _components.Count - 1; i >= 0; i--)
 			{
+				var component = _components[i];
 				if (component is RScript script)
 				{
 					script.OnDestroy();
@@ -318,5 +366,20 @@ public sealed class RObject : Object
 			}
 		}
 		base.Dispose(disposing);
+	}
+}
+
+public struct RObjectEqualityComparer : IEqualityComparer<RObject>
+{
+	public bool Equals(RObject? x, RObject? y)
+	{
+		if (ReferenceEquals(x, y)) return true;
+		if (x is null || y is null) return false;
+		return ReferenceEquals(x, y);
+	}
+
+	public int GetHashCode(RObject obj)
+	{
+		return RuntimeHelpers.GetHashCode(obj);
 	}
 }

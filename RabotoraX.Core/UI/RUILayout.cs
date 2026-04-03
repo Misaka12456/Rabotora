@@ -1,6 +1,7 @@
 using System.Numerics;
 using JetBrains.Annotations;
 using RabotoraX.Core.Mathematics;
+using RabotoraX.Core.Serialization;
 
 namespace RabotoraX.Core.UI;
 
@@ -8,8 +9,10 @@ namespace RabotoraX.Core.UI;
 /// Represents a layout component that can be used to position and size UI elements in a 2D (or 3D Hybrid) stage.<br />
 /// The coordinate system used by <see cref="RUILayout"/> is directly Screen Space coordinates, but it will be transformed to the local Cartesian coordinate system for the basic <see cref="RLayout"/> functionality.
 /// </summary>
+
 public sealed class RUILayout : RLayout
 {
+    [field: RSerializableField]
     public Vector2 Pivot
     {
         get;
@@ -21,6 +24,7 @@ public sealed class RUILayout : RLayout
         }
     } = new(0.5f, 0.5f);
 
+    [field: RSerializableField]
     public Vector2 AnchorMin
     {
         get;
@@ -32,6 +36,7 @@ public sealed class RUILayout : RLayout
         }
     } = new(0.5f, 0.5f);
 
+    [field: RSerializableField]
     public Vector2 AnchorMax
     {
         get;
@@ -43,6 +48,7 @@ public sealed class RUILayout : RLayout
         }
     } = new(0.5f, 0.5f);
 
+    [field: RSerializableField]
     public Vector2 OffsetMin
     {
         get;
@@ -54,6 +60,7 @@ public sealed class RUILayout : RLayout
         }
     } = Vector2.Zero;
 
+    [field: RSerializableField]
     public Vector2 OffsetMax
     {
         get;
@@ -69,6 +76,7 @@ public sealed class RUILayout : RLayout
     /// The scale of the ui layout. This hides <see cref="RLayout.Scale"/> intentionally.<br />
     /// The scaling is applied around <see cref="Pivot"/>.
     /// </summary>
+    [field: RSerializableField]
     public new Vector2 Scale
     {
         get;

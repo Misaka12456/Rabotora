@@ -10,7 +10,7 @@ namespace RabotoraX.Core.UI;
 /// </summary>
 public abstract class UILayoutGroup : Component2D
 {
-	protected RUILayout UILayout { get; private set; } = null!;
+	protected new RUILayout UILayout { get; private set; } = null!;
 
 	[UsedImplicitly]
 	public float PaddingLeft
@@ -220,7 +220,7 @@ public abstract class UILayoutGroup : Component2D
 #endif
 	}
 
-	protected float GetStartOffset(UIAxis axis, float innerSize, float contentSize, UIAlignment alignment)
+	protected static float GetStartOffset(UIAxis axis, float innerSize, float contentSize, UIAlignment alignment)
 	{
 		return axis switch
 		{

@@ -1,6 +1,9 @@
+using MemoryPack;
+
 namespace RabotoraX.Core.Mathematics;
 
-public struct Rect
+[MemoryPackable]
+public partial struct Rect
 {
 	public readonly static Rect Zero = new(0, 0, 0, 0);
 	

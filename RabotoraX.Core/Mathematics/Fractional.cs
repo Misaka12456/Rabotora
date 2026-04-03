@@ -1,6 +1,9 @@
+using MemoryPack;
+
 namespace RabotoraX.Core.Mathematics;
 
-public struct Fractional
+[MemoryPackable]
+public partial struct Fractional
 {
 	public int Numerator;
 	public int Denominator;

@@ -1,4 +1,5 @@
 using RabotoraX.Core.Graphics;
+using RabotoraX.Core.Serialization;
 
 namespace RabotoraX.Core.UI;
 
@@ -9,11 +10,15 @@ public class Image : UIRenderable
 		get => Sprite?.Texture;
 		set => throw new NotSupportedException("Use the Sprite property to set the texture for an Image component.");
 	}
-	public override float Opacity { get; set; } = 1.0f;
+
+	[field: RSerializableField]
+	public override float Opacity { get; set; } = 1;
+
 	public override INativeShader? CustomShader { get; set; }
 	public override float PreferredWidth => Sprite?.SourceRect.Width ?? 0;
 	public override float PreferredHeight => Sprite?.SourceRect.Height ?? 0;
 
+	[field: RSerializableField]
 	public Sprite? Sprite { get; set; }
 
 	protected override void Render(INative2DRenderContext context)

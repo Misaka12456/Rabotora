@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using MemoryPack;
 
 namespace RabotoraX.Core.Graphics;
 
@@ -7,7 +8,8 @@ namespace RabotoraX.Core.Graphics;
 /// Represents a color with red, green, blue, and alpha components. Each component is a byte in the range [0, 255].
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public struct Color32
+[MemoryPackable]
+public partial struct Color32
 {
 	public readonly static Color32 White = new(0xFF, 0xFF, 0xFF);
 	public readonly static Color32 WhiteTransparent = new(0xFF, 0xFF, 0xFF, 0x00);

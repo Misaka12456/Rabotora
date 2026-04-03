@@ -1,4 +1,5 @@
 using System.Numerics;
+using RabotoraX.Core.Serialization;
 
 namespace RabotoraX.Core;
 
@@ -7,9 +8,9 @@ public class RLayout : Component
 	/// <summary>
 	/// Represents the layout's local position.
 	/// </summary>
-	public Vector3 Position { get; set; }
-	public Quaternion Rotation { get; set; } = Quaternion.Identity;
-	public Vector3 Scale { get; set; } = Vector3.One;
+	[field: RSerializableField] public Vector3 Position { get; set; }
+	[field: RSerializableField] public Quaternion Rotation { get; set; } = Quaternion.Identity;
+	[field: RSerializableField] public Vector3 Scale { get; set; } = Vector3.One;
 	public RLayout? Parent { get; internal set; }
 	public Matrix4x4 WorldMatrix => CalculateWorldMatrix();
 	private readonly List<RLayout> _children = [];

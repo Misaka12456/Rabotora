@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using RabotoraX.Core.Inputs;
 using RabotoraX.Core.Mathematics;
 
@@ -33,9 +34,9 @@ public interface INativeWindow : IDisposable
 	event EventHandler<(int, int)>? Resized;
 	event EventHandler? SwitchingFullScreen;
 	event EventHandler? SwitchedFullScreen;
-	event EventHandler<bool>? Closing;
-	event EventHandler<bool>? FocusChanged;
-	event EventHandler? Paint;
+	[UsedImplicitly] event EventHandler<bool>? Closing;
+	[UsedImplicitly] event EventHandler<bool>? FocusChanged;
+	[UsedImplicitly] event EventHandler? Paint;
 
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Win32.RenderImpl.Win32NativeWindow", "RabotoraX.Interop.Win32")]
 	[DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, "RabotoraX.Interop.Linux.RenderImpl.WaylandNativeWindow", "RabotoraX.Interop.Linux")]

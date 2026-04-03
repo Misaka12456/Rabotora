@@ -1,8 +1,11 @@
 namespace RabotoraX.Core;
 
+/// <summary>
+/// Represents the base class for all objects in the RabotoraX framework.
+/// </summary>
 public abstract class Object : IDisposable
 {
-	public string InstanceId { get; }
+	public string InstanceId { get; internal set; } // Add setter for RabotoraX Stage Serialization support
 	private bool _isDisposed;
 
 	protected Object()
@@ -32,5 +35,25 @@ public abstract class Object : IDisposable
 	public static bool operator !=(Object? left, Object? right)
 	{
 		return !(left == right);
+	}
+	
+	public bool Equals(Object? other)
+	{
+		if (other is null) return false;
+		return InstanceId == other.InstanceId;
+	}
+	
+	public override bool Equals(object? obj)
+	{
+		if (obj is Object other)
+		{
+			return Equals(other);
+		}
+		return false;
+	}
+	
+	public override int GetHashCode()
+	{
+		return InstanceId.GetHashCode();
 	}
 }

@@ -2,22 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.UI;
+using RabotoraX.Core.Videos;
 using RabotoraX.Interop.Direct3D11.Rendering;
 using Vortice;
 using Vortice.Direct2D1;
+using Vortice.Direct3D11;
 using Vortice.DirectWrite;
+using Vortice.DXGI;
 using Vortice.Mathematics;
 using Vortice.WIC;
 using BitmapInterpolationMode = Vortice.Direct2D1.BitmapInterpolationMode;
 using RRect = RabotoraX.Core.Mathematics.Rect;
+using AlphaMode = Vortice.DCommon.AlphaMode;
 
 namespace RabotoraX.Interop.Direct3D11;
 
 public partial class DirectX11
 {
-	
 	private partial class D2DContextImpl
 	{
 		private readonly DirectX11 _parent;
@@ -64,26 +68,43 @@ public partial class DirectX11
 
 		public void DrawImage(INativeTexture2D texture, float x, float y, float width, float height, float opacity = 1)
 		{
-			if (texture is not D2DTexture d2dTex) return;
 			var descRect = new Rect(x, y, width, height); 
-			D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+			// if (texture is not D2DTexture d2dTex) return;
+			// D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+			switch (texture)
+			{
+				case DX11NV12VideoTexture nv12:
+					nv12.D2DBitmap ??= CreateNV12D2DBitmap(nv12.OutputRgba, D2DContext);
+					D2DContext.DrawBitmap(nv12.D2DBitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+					break;
+				case D2DTexture d2dTex:
+					D2DContext.DrawBitmap(d2dTex.Bitmap, opacity, BitmapInterpolationMode.Linear, descRect);
+					break;
+			}
 		}
 
 		public void DrawImage(INativeTexture2D texture, RRect sourceRect, float x, float y, float width, float height, float opacity = 1)
 		{
-			if (texture is not D2DTexture d2dTex) return;
-			var destRect = new Rect(x, y, width, height); 
+			var destRect = new Rect(x, y, width, height);
 			var srcRect = new RawRectF(sourceRect.X, sourceRect.Y, sourceRect.X + sourceRect.Width, sourceRect.Y + sourceRect.Height);
-
-			if (_currentShader is DX11CombinedShader { D2DEffectId: not null } combined)
+			switch (texture)
 			{
-				var effect = _parent.GetEffectInstance(combined.D2DEffectId.Value);
-				using var image = effect.QueryInterface<ID2D1Image>();
-				D2DContext.DrawImage(image, new Vector2(x, y), srcRect, InterpolationMode.Linear, CompositeMode.SourceOver);
-			}
-			else
-			{
-				D2DContext.DrawBitmap(d2dTex.Bitmap, destRect, opacity, BitmapInterpolationMode.Linear, srcRect);
+				case DX11NV12VideoTexture nv12:
+					nv12.D2DBitmap ??= CreateNV12D2DBitmap(nv12.OutputRgba, D2DContext);
+					D2DContext.DrawBitmap(nv12.D2DBitmap, destRect, opacity, BitmapInterpolationMode.Linear, srcRect);
+					return;
+				case D2DTexture d2dTex:
+					if (_currentShader is DX11CombinedShader {D2DEffectId: not null} combined)
+					{
+						var effect = _parent.GetEffectInstance(combined.D2DEffectId.Value);
+						using var image = effect.QueryInterface<ID2D1Image>();
+						D2DContext.DrawImage(image, new Vector2(x, y), srcRect, InterpolationMode.Linear, CompositeMode.SourceOver);
+					}
+					else
+					{
+						D2DContext.DrawBitmap(d2dTex.Bitmap, destRect, opacity, BitmapInterpolationMode.Linear, srcRect);
+					}
+					break;
 			}
 		}
 
@@ -126,7 +147,7 @@ public partial class DirectX11
 				converter.Initialize(frame, PixelFormat.Format32bppPBGRA);
 
 				var bitmap = D2DContext.CreateBitmapFromWicBitmap(converter, new BitmapProperties(
-					new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
+					new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, AlphaMode.Premultiplied)));
 				return new D2DTexture(bitmap);
 			}
 			finally
@@ -140,7 +161,7 @@ public partial class DirectX11
 
 		public unsafe INativeTexture2D CreateTexture(int width, int height, ReadOnlyMemory<byte> pixelData)
 		{
-			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied);
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, AlphaMode.Premultiplied);
 			int pitch = width * 4; // Assuming 4 bytes per pixel (BGRA)
 			
 			var props = new BitmapProperties(pixelFormat);
@@ -153,7 +174,7 @@ public partial class DirectX11
 
 		public unsafe INativeTexture2D CreateVideoTexture(int width, int height, ReadOnlyMemory<byte>? initialData = null)
 		{
-			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Ignore);
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, AlphaMode.Ignore);
 			int pitch = width * 4; // Assuming 4 bytes per pixel (BGRA)
 			
 			var props = new BitmapProperties(pixelFormat);
@@ -173,14 +194,19 @@ public partial class DirectX11
 			}
 		}
 
-		public INativeTexture2D CreateVideoTexture(int width, int height, GpuFormat format, ReadOnlyMemory<byte>? initialData = null)
+		public INativeTexture2D CreateVideoTexture(int width, int height, VideoPixelFormat format, ReadOnlyMemory<byte>? initialData = null)
 		{
-			return _parent.CreateTexture2D(width, height, format, initialData.GetValueOrDefault().Span);
+			if (format == VideoPixelFormat.NV12)
+			{
+				return _parent.CreateNV12VideoTexture(width, height);
+			}
+			
+			return CreateVideoTexture(width, height, initialData);
 		}
 
 		public INativeTexture2D CreateEmptyTexture(int width, int height)
 		{
-			var pixelFormat = new Vortice.DCommon.PixelFormat(Vortice.DXGI.Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied);
+			var pixelFormat = new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, AlphaMode.Premultiplied);
 			var props = new BitmapProperties(pixelFormat);
     
 			var bitmap = D2DContext.CreateBitmap(new SizeI(width, height), props);
@@ -228,6 +254,14 @@ public partial class DirectX11
 			}
 			_brushCache.Clear();
 			_formatCache.Clear();
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static ID2D1Bitmap1 CreateNV12D2DBitmap(ID3D11Texture2D rgbaTex, ID2D1DeviceContext context)
+		{
+			using var surface = rgbaTex.QueryInterface<IDXGISurface>();
+			return context.CreateBitmapFromDxgiSurface(surface, new BitmapProperties1(new Vortice.DCommon.PixelFormat(Format.R8G8B8A8_UNorm, AlphaMode.Premultiplied),
+				96, 96, BitmapOptions.None));
 		}
 	}
 }

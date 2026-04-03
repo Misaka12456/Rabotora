@@ -7,6 +7,7 @@ using RabotoraX.Core.Cinematics;
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Mathematics;
 using RabotoraX.Core.Resources;
+using RabotoraX.Core.Serialization;
 using RabotoraX.Core.Test;
 using RabotoraX.Core.UI;
 using RabotoraX.Core.Videos;
@@ -24,7 +25,7 @@ public static class Program
 	{
 		using var app = new Rabotora("Example Presentation", 1280, 720, new Fractional(16, 9));
 
-		return app.Run(Example3DHybridStage());
+		return app.Run(Example2DGoLiveStage2Persistent());
 	}
 
 	private static RStage Example3DStage()
@@ -212,16 +213,13 @@ public static class Program
 		imgLayout.AnchorMax = Vector2.One;
 		imgLayout.OffsetMin = imgLayout.OffsetMax = Vector2.Zero;
 		image.Opacity = 1;
-		var clip = new VideoClip(File.OpenRead("<YOUR_VIDEO_PATH_HERE>"));
-		var player = imageObj.AddComponent<RVideoPlayer>();
-		player.Clip = clip;
-		player.Prepare();
-		image.Texture = player.Texture; // assign the player's texture to the RawImage
+		imageObj.AddComponent<RVideoPlayer>();
 		var vtp = imageObj.AddComponent<VideoTexturePlayer>();
+		vtp.VideoPath = @"<YOUR_VIDEO_PATH_HERE>";
 		
 		var statusTextObj = stage.CreateObject("StatusText");
 		var statusText = statusTextObj.AddComponent<Text>();
-		var statusLayout = (RUILayout) statusText.Layout;
+		var statusLayout = (RUILayout)statusText.Layout;
 		statusLayout.SetParent(canvas.Layout);
 		
 		statusLayout.AnchorMin = statusLayout.AnchorMax = new Vector2(0, 0); // Top-left corner
@@ -234,6 +232,20 @@ public static class Program
 		statusText.Content = "Idle";
 		vtp._statusText = statusText; // pass the reference to VideoTexturePlayer for status updates
 		
+		using var serializer = new RBinaryFormatter(new FileStream("VideoPlayerStage.rsx", FileMode.Create, FileAccess.Write));
+		serializer.SerializeAsync(stage).AsTask().GetAwaiter().GetResult();
+		serializer.Close();
+		
+		Console.WriteLine($"RStage serialized to {Path.GetFullPath("VideoPlayerStage.rsx")}");
+		
+		return stage;
+	}
+
+	private static RStage Example2DGoLiveStage2Persistent()
+	{
+		using var deserializer = new RBinaryFormatter(File.OpenRead("VideoPlayerStage.rsx"));
+		var stage = deserializer.DeserializeAsync<RStage>().AsTask().GetAwaiter().GetResult();
+		deserializer.Close();
 		return stage;
 	}
 }

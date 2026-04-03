@@ -1,5 +1,6 @@
 using RabotoraX.Core.Graphics;
 using RabotoraX.Core.Mathematics;
+using RabotoraX.Core.Serialization;
 
 namespace RabotoraX.Core.UI;
 
@@ -9,9 +10,12 @@ namespace RabotoraX.Core.UI;
 public class RawImage : UIRenderable
 {
 	public override Texture2D? Texture { get; set; }
+	
+	[field: RSerializableField]
 	public override float Opacity { get; set; } = 1.0f;
 	public override INativeShader? CustomShader { get; set; }
 	
+	[field: RSerializableField]
 	public Rect UVRect { get; set; } = new(0, 0, 1, 1);
 
 	public override float PreferredWidth => Texture != null ? Texture.Width * UVRect.Width : 0;
